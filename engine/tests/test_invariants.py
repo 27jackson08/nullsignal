@@ -68,10 +68,8 @@ def test_missing_critical_source_caps_sufficiency():
 
 # --- 2. Contradictions widen rather than average ------------------------------
 
-@pytest.mark.skip(reason="unlocks day 3: contradiction graph")
-def test_contradiction_widens_not_averages():
-    """Two reliable sources in conflict must raise uncertainty, never resolve to
-    a midpoint that splits the difference between 'halted' and 'normal'."""
+# Landed on day 3. Lives in test_contradictions.py:
+#   test_contradiction_widens_uncertainty_and_leaves_the_risk_estimate_alone
 
 
 # --- 3. Unreliable evidence cannot move the posterior -------------------------

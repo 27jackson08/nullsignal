@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 
 
+from nullsignal.bias.propensity import Propensity
 from nullsignal.inference.evidence import ZoneEvidence
 from nullsignal.types import Reliability, Zone
 
@@ -20,10 +21,21 @@ def make_zone(**overrides) -> Zone:
     return Zone(**{**defaults, **overrides})
 
 
+def make_propensity(index: float = 1.0, *, standard_error: float = 0.1,
+                    geoid: str = "36061000100") -> Propensity:
+    import math
+    return Propensity(geoid=geoid, log_index=math.log(index),
+                      standard_error=standard_error, category_count=5,
+                      total_reports=100)
+
+
 def make_evidence(*, zone: Zone | None = None, sources: dict | None = None,
                   heat_index_f: float | None = 95.0, report_count: int = 50,
+                  recent_report_count: int | None = None,
+                  report_window_hours: float = 1440.0,
                   latest_report_at: datetime | None = None,
-                  transit_feed_age_seconds: float | None = 20.0) -> ZoneEvidence:
+                  transit_feed_age_seconds: float | None = 20.0,
+                  propensity: Propensity | None = None) -> ZoneEvidence:
     if sources is None:
         sources = {
             "311": Reliability(), "nws": Reliability(),
@@ -32,12 +44,16 @@ def make_evidence(*, zone: Zone | None = None, sources: dict | None = None,
     return ZoneEvidence(
         zone=zone or make_zone(),
         report_count=report_count,
+        recent_report_count=(recent_report_count if recent_report_count is not None
+                             else round(report_count * 48 / 1440)),
+        report_window_hours=report_window_hours,
         latest_report_at=latest_report_at if latest_report_at is not None else NOW,
         heat_index_f=heat_index_f,
         transit_feed_age_seconds=transit_feed_age_seconds,
         transit_alerts=0,
         source_reliability=sources,
         observed_at=NOW,
+        propensity=propensity,
     )
 
 
