@@ -35,6 +35,7 @@ def make_evidence(*, zone: Zone | None = None, sources: dict | None = None,
                   report_window_hours: float = 1440.0,
                   latest_report_at: datetime | None = None,
                   transit_feed_age_seconds: float | None = 20.0,
+                  transit_alerts: int = 0,
                   propensity: Propensity | None = None) -> ZoneEvidence:
     if sources is None:
         sources = {
@@ -50,7 +51,7 @@ def make_evidence(*, zone: Zone | None = None, sources: dict | None = None,
         latest_report_at=latest_report_at if latest_report_at is not None else NOW,
         heat_index_f=heat_index_f,
         transit_feed_age_seconds=transit_feed_age_seconds,
-        transit_alerts=0,
+        transit_alerts=transit_alerts,
         source_reliability=sources,
         observed_at=NOW,
         propensity=propensity,

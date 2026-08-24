@@ -123,9 +123,7 @@ def test_vulnerability_multiplier_is_monotonic():
 
 # --- 5. It beats the baseline where it counts ---------------------------------
 
-@pytest.mark.skip(reason="unlocks day 5: scenario engine and scoreboard")
-def test_silent_failure_beats_baseline():
-    """Detection lead time over the baseline must be positive."""
+# Landed on day 5. Lives in test_scenario.py::test_silent_failure_beats_baseline
 
 
 # --- 6. The explanation layer cannot invent numbers ---------------------------
