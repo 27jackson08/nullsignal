@@ -22,7 +22,13 @@ def main(argv: list[str] | None = None) -> int:
                       help="311 lookback window in days")
     snap.add_argument("--max-requests", type=int, default=200_000)
     snap.add_argument("--skip", nargs="*", default=[],
-                      choices=["tracts", "svi", "311", "weather", "transit"])
+                      choices=["tracts", "svi", "311", "weather", "transit",
+                               "gtfs_static"])
+
+    poll = sub.add_parser("poll", help="record repeated observations of volatile feeds")
+    poll.add_argument("--rounds", type=int, default=1)
+    poll.add_argument("--interval", type=float, default=30.0,
+                      help="seconds between rounds")
 
     sub.add_parser("build", help="build the DuckDB store from data/raw")
 
@@ -42,6 +48,13 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"  {name}: {err}", file=sys.stderr)
             return 1
         print("\nsnapshot complete")
+        return 0
+
+    if args.command == "poll":
+        from .sources.poll import run_poll
+        observations = run_poll(RAW_DIR, rounds=args.rounds,
+                                interval_seconds=args.interval)
+        print(f"\nrecorded {len(observations)} observations")
         return 0
 
     if args.command == "build":
