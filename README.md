@@ -53,9 +53,35 @@ approaches were tried and rejected:
 
 Canvas: ~1 ms per view switch, 64 DOM nodes, no long tasks.
 
+## Silent-failure detection
+
+A feed can be up and semantically dead: HTTP 200, correct content type,
+plausible payload, nothing behind it changing. Three detectors, run against
+poll history rather than a single snapshot:
+
+| Detector | Catches |
+| --- | --- |
+| `cadence_violation` | the feed's own clock has stopped advancing |
+| `content_flatline` | payload byte-identical for longer than its publish interval |
+| `value_flatline` | a reading pinned at one plausible constant |
+
+Combined with `max`, not a sum: a frozen feed trips several at once, but that
+is one fact seen three ways.
+
+Two rules keep them honest, both learned the hard way:
+
+- **Duration, not poll count.** Counting identical polls flags any feed polled
+  faster than it publishes — an hourly forecast sampled every 30s is always
+  byte-identical and perfectly healthy.
+- **Lag at poll time, not against now.** Measuring against wall-clock conflates
+  "the feed stopped" with "we stopped polling", so every feed looked dead
+  minutes after a poll run ended.
+
+Detectors that cannot run report as *not checked*, never as passing.
+
 ## Status
 
-Day 1 of 7 — walking skeleton. See `docs/PLAN.md`.
+Day 2 of 7. See `docs/PLAN.md`.
 
 The suite doubles as a build progress meter: invariants for components not yet
 built are skipped with the day they unlock, rather than quietly passing.
