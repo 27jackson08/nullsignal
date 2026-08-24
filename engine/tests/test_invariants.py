@@ -74,9 +74,7 @@ def test_missing_critical_source_caps_sufficiency():
 
 # --- 3. Unreliable evidence cannot move the posterior -------------------------
 
-@pytest.mark.skip(reason="unlocks day 4: Bayesian inference")
-def test_stale_source_cannot_move_posterior():
-    """As freshness -> 0, KL(posterior || prior) -> 0."""
+# Landed on day 4. Lives in test_bayes.py::test_stale_source_cannot_move_posterior
 
 
 def test_stale_critical_source_lowers_sufficiency():
@@ -109,9 +107,9 @@ def test_quiet_reports_do_not_read_as_stale_evidence():
 
 # --- 4. Equity is structural --------------------------------------------------
 
-@pytest.mark.skip(reason="unlocks day 4: value-of-information ranking")
-def test_equity_monotonicity():
-    """Evidence held constant, higher SVI must raise the value of verifying."""
+# Landed on day 4. Lives in test_voi.py::test_equity_monotonicity -- measured on
+# unresolved harm rather than VOI, which is not monotone in stakes. See the note
+# there.
 
 
 def test_vulnerability_multiplier_is_monotonic():

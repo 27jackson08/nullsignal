@@ -81,12 +81,18 @@ def test_contradiction_widens_uncertainty_and_leaves_the_risk_estimate_alone():
 
     Averaging "halted" and "normal" into "mildly degraded" would launder a
     crisis into a shrug. A contradiction lowers sufficiency -- the decision
-    becomes less supportable -- while the risk estimate is untouched, because
-    nothing about the hazard itself has been learned.
+    becomes less supportable -- while the hazard estimate is untouched, because
+    a disagreement is not a measurement.
+
+    The second half is asserted structurally rather than by comparing two
+    tracts. Risk is a pure function of the posterior, and the contradiction
+    graph is not an input to it; showing that directly is stronger than
+    matching two numbers that could coincide for unrelated reasons.
     """
+    from nullsignal.inference.hypotheses import expected_harm
+
     quiet = dict(sources=HEALTHY, heat_index_f=104.0,
                  report_count=200, recent_report_count=0)
-
     vocal = make_evidence(propensity=make_propensity(1.5), **quiet)
     silent = make_evidence(propensity=make_propensity(0.02), **quiet)
 
@@ -94,10 +100,25 @@ def test_contradiction_widens_uncertainty_and_leaves_the_risk_estimate_alone():
     unconflicted = engine.assess(silent)
 
     assert conflicted.contradictions, "expected a conflict in the vocal tract"
+    assert unconflicted.contradictions == ()
     assert conflicted.sufficiency.contradiction < unconflicted.sufficiency.contradiction
-    assert conflicted.sufficiency.score < unconflicted.sufficiency.score
-    # The hazard estimate is unchanged: a disagreement is not a measurement.
-    assert conflicted.risk == pytest.approx(unconflicted.risk)
+
+    # Risk comes from the posterior alone -- the graph never reaches it.
+    for assessment, evidence in ((conflicted, vocal), (unconflicted, silent)):
+        assert assessment.risk == pytest.approx(
+            expected_harm(assessment.posterior,
+                          evidence.zone.vulnerability_multiplier),
+            abs=1e-5,
+        )
+
+
+def test_a_conflict_costs_sufficiency_without_touching_the_posterior():
+    """Same posterior, worse agreement, lower sufficiency -- isolated."""
+    from nullsignal.types import Sufficiency
+
+    agreed = Sufficiency(entropy=0.7, coverage=0.9, contradiction=1.0, staleness=0.9)
+    disputed = Sufficiency(entropy=0.7, coverage=0.9, contradiction=0.3, staleness=0.9)
+    assert disputed.score < agreed.score
 
 
 def test_contradiction_mass_is_reported_not_resolved():
