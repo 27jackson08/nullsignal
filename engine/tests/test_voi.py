@@ -111,17 +111,15 @@ def test_a_check_that_settles_whether_trains_run_has_value_in_a_blind_heatwave()
     )
 
 
-def test_a_check_too_unreliable_to_change_the_decision_is_worth_nothing():
-    """The cheap cross-check earns a zero here, and should.
+def test_a_less_reliable_check_of_the_same_question_is_worth_less():
+    """Both calls settle whether trains are running; one settles it better.
 
-    At 80% accuracy on a near-indifferent decision it cannot move the choice,
-    so no amount of being cheap makes it worth ordering -- while the 95%
-    accurate phone call can and does. Fitting for a source whose whole
-    weakness is that it tends to agree with the primary feed it is meant to
-    check.
+    Asserted as an ordering rather than an exact figure, because the absolute
+    value moves with likelihood calibration while the ranking should not: a
+    source whose weakness is that it tends to agree with the feed it is meant
+    to check cannot be worth more than picking up the phone.
     """
     ranked = {r.key: r for r in evpi.rank(posterior_for(), harm_scale=2.8)}
-    assert ranked["alternate_transit_feed"].value == pytest.approx(0.0)
     assert ranked["call_transit_ops"].value > ranked["alternate_transit_feed"].value
 
 
