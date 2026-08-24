@@ -1,5 +1,5 @@
 {
-  "snapshot_at": "2026-08-24T10:39:57.788628+00:00",
+  "snapshot_at": "2026-08-24T12:39:56.890676+00:00",
   "sources": [
     {
       "source_id": "311",
@@ -9,6 +9,24 @@
       "byte_count": 47096125,
       "path": "311_requests.json",
       "note": "200000 geocoded requests since 2026-06-25T10:39:20"
+    },
+    {
+      "source_id": "gtfs_static",
+      "fetched_at": "2026-08-24T12:39:56.883144+00:00",
+      "status_code": 200,
+      "content_hash": "056d1fc821f26e85",
+      "byte_count": 5610175,
+      "path": "gtfs_subway.zip",
+      "note": "MTA subway GTFS static"
+    },
+    {
+      "source_id": "gtfs_stations",
+      "fetched_at": "2026-08-24T12:39:56.890259+00:00",
+      "status_code": 200,
+      "content_hash": "4e4bf40b0e71f328",
+      "byte_count": 43792,
+      "path": "gtfs_stations.json",
+      "note": "496 parent stations"
     }
   ],
   "failures": []
