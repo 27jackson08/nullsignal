@@ -22,6 +22,14 @@ SVI_MISSING_SENTINEL = -999
 # Everything downstream wants 0-1, so normalisation happens once, here.
 PERCENT_SCALE = 100.0
 
+# Standard transit-access buffer: the distance people will walk to a station.
+TRANSIT_WALK_BUFFER_METRES = 800
+
+# UTM zone 18N covers New York. Buffering in degrees would be anisotropic --
+# 800 "metres" of longitude is a quarter shorter than 800 of latitude here.
+PROJECTED_CRS = "EPSG:32618"
+GEOGRAPHIC_CRS = "EPSG:4326"
+
 
 def connect(db_path: Path, *, read_only: bool = False) -> duckdb.DuckDBPyConnection:
     con = duckdb.connect(str(db_path), read_only=read_only)
@@ -43,6 +51,8 @@ def build_store(raw_dir: Path, db_path: Path) -> dict[str, int]:
         counts["zones"] = _build_zones(con)
         counts["reports"] = _load_service_requests(con, raw_dir / "311_requests.json")
         counts["reports_by_zone"] = _aggregate_reports(con)
+        counts["stations"] = _load_stations(con, raw_dir / "gtfs_stations.json")
+        counts["transit_coverage"] = _compute_transit_coverage(con)
         counts["weather"] = _load_weather(con, raw_dir / "nws_forecast.json")
         counts["feeds"] = _load_feed_health(con, raw_dir / "gtfs_rt_summary.json")
     finally:
@@ -169,6 +179,69 @@ def _aggregate_reports(con: duckdb.DuckDBPyConnection) -> int:
         """
     )
     return _count(con, "reports_by_zone")
+
+
+def _load_stations(con: duckdb.DuckDBPyConnection, path: Path) -> int:
+    path = _resolve(path, "gtfs_stations")
+    con.execute(
+        """
+        CREATE OR REPLACE TABLE transit_stations AS
+        SELECT stop_id, stop_name,
+               ST_Point(longitude, latitude) AS geom
+        FROM read_json_auto(?)
+        """,
+        [str(path)],
+    )
+    return _count(con, "transit_stations")
+
+
+def _compute_transit_coverage(con: duckdb.DuckDBPyConnection) -> int:
+    """Fraction of each tract within walking distance of a subway station.
+
+    This is coverage in the literal sense: how much of the tract the realtime
+    transit feed could ever tell us anything about. A tract at zero is not
+    thereby safe -- it is a tract where transit evidence does not exist, which
+    is a gap to be surfaced rather than a clean bill of health.
+
+    `always_xy` is not optional. Without it DuckDB honours EPSG:4326's declared
+    (latitude, longitude) axis order, the transform silently returns nonsense
+    coordinates, and every buffer lands in the wrong hemisphere.
+    """
+    con.execute(
+        f"""
+        CREATE OR REPLACE TABLE transit_coverage AS
+        WITH walkable AS (
+            SELECT ST_Union_Agg(
+                       ST_Buffer(
+                           ST_Transform(geom, '{GEOGRAPHIC_CRS}', '{PROJECTED_CRS}', true),
+                           {TRANSIT_WALK_BUFFER_METRES}
+                       )
+                   ) AS area
+            FROM transit_stations
+        ),
+        projected AS (
+            SELECT geoid,
+                   ST_Transform(geom, '{GEOGRAPHIC_CRS}', '{PROJECTED_CRS}', true) AS geom
+            FROM zones
+        )
+        SELECT
+            p.geoid,
+            LEAST(1.0, GREATEST(0.0,
+                ST_Area(ST_Intersection(p.geom, w.area))
+                / NULLIF(ST_Area(p.geom), 0)
+            )) AS transit_coverage
+        FROM projected p CROSS JOIN walkable w
+        """
+    )
+    con.execute(
+        """
+        ALTER TABLE zones ADD COLUMN IF NOT EXISTS transit_coverage DOUBLE;
+        UPDATE zones SET transit_coverage = (
+            SELECT tc.transit_coverage FROM transit_coverage tc WHERE tc.geoid = zones.geoid
+        );
+        """
+    )
+    return _count(con, "transit_coverage")
 
 
 def _load_weather(con: duckdb.DuckDBPyConnection, path: Path) -> int:
