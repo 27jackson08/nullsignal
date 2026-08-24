@@ -1,0 +1,48 @@
+.meter-row {
+  display: grid;
+  grid-template-columns: 1fr 6rem 2.2rem;
+  align-items: center;
+  gap: var(--space-2);
+  padding: .3rem 0;
+  font-size: .8rem;
+}
+
+.meter-label { color: var(--ink-dim); }
+
+.meter-track {
+  position: relative;
+  height: .5rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--rule);
+  overflow: hidden;
+}
+
+.meter-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+/* An unmeasured term is drawn as a void, not an empty bar and never a full one.
+   The visual has to say "we did not look", which is a different claim from
+   "we looked and found nothing". */
+.meter-void {
+  display: block;
+  height: 100%;
+  background-image: repeating-linear-gradient(
+    45deg, transparent 0 3px, var(--rule-strong) 3px 4.2px
+  );
+}
+
+.meter-value { color: var(--ink-faint); font-family: var(--font-mono); font-size: .72rem; text-align: right; }
+
+.meter-row.is-unmeasured .meter-label { color: var(--ink-faint); }
+
+.meter-note {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  font-size: .62rem;
+  letter-spacing: .05em;
+  color: var(--ink-faint);
+  padding-left: .1rem;
+}

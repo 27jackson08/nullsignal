@@ -1,0 +1,35 @@
+/* NullSignal design tokens.
+   Committed to a single dark direction on purpose: this is a 24/7 municipal
+   operations console, read in a dim room next to other monitors, not a
+   marketing page. Light mode is not an omission here, it is a decision. */
+:root {
+  --ground:        #0B0E13;
+  --surface:       #12171F;
+  --surface-raised:#1A212B;
+  --rule:          #232C38;
+  --rule-strong:   #34404F;
+
+  --ink:           #E6EBF2;
+  --ink-dim:       #97A3B4;
+  --ink-faint:     #616D7D;
+
+  --accent:        #7FB2E0;
+
+  /* Risk hue. These four are semantic and never used decoratively. */
+  --state-unknown:        #59646F;
+  --state-confirmed-low:  #2E9E7E;
+  --state-suspected:      #D99A2B;
+  --state-confirmed-high: #D9564C;
+
+  --font-display: "Archivo", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --space-1: .25rem;  --space-2: .5rem;   --space-3: .75rem;
+  --space-4: 1rem;    --space-5: 1.5rem;  --space-6: 2rem;
+
+  --duration-fast: 120ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --panel-width: 27rem;
+  --header-height: 4.25rem;
+}
