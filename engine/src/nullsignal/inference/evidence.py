@@ -57,11 +57,28 @@ class ZoneEvidence:
         return min(actual / ideal, 1.0)
 
     @property
+    def critical_sources(self) -> frozenset[str]:
+        """Which sources are decision-critical *for this zone*.
+
+        Transit joins the set only where households lack cars. A tract where
+        nearly everyone drives is not endangered by an unobservable subway
+        feed; a tract where 80% have no vehicle very much is, because transit
+        is how those residents would reach a cooling centre. Treating
+        criticality as a fixed property of the source would either over-flag
+        car-dependent suburbs or under-flag the people most exposed.
+        """
+        critical = set(config.ALWAYS_CRITICAL_SOURCES)
+        no_vehicle = self.zone.pct_no_vehicle
+        if no_vehicle is not None and no_vehicle >= config.TRANSIT_DEPENDENCE_THRESHOLD:
+            critical |= config.CONDITIONALLY_CRITICAL_SOURCES
+        return frozenset(critical)
+
+    @property
     def missing_critical_sources(self) -> tuple[str, ...]:
         """Sources without which no safe call is defensible for this zone."""
         return tuple(
             sorted(
-                name for name in config.CRITICAL_SOURCES
+                name for name in self.critical_sources
                 if self.source_reliability.get(name, Reliability.absent()).score <= 0.0
             )
         )
@@ -80,7 +97,7 @@ class ZoneEvidence:
         """
         critical = [
             self.source_reliability.get(name, Reliability.absent()).freshness
-            for name in config.CRITICAL_SOURCES
+            for name in self.critical_sources
         ]
         return min(critical) if critical else 0.0
 

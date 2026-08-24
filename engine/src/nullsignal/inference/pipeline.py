@@ -10,6 +10,7 @@ from pathlib import Path
 
 from .. import config
 from ..heat import heat_index_f
+from ..reliability.feeds import FeedHealth, assess_feeds
 from ..store import connect
 from ..types import Reliability, Zone
 from .evidence import ZoneEvidence
@@ -19,8 +20,16 @@ from .evidence import ZoneEvidence
 REPORT_FRESHNESS_HORIZON = timedelta(days=7)
 
 
-def load_evidence(db_path: Path, *, observed_at: datetime | None = None) -> list[ZoneEvidence]:
+def load_evidence(
+    db_path: Path,
+    *,
+    observed_at: datetime | None = None,
+    raw_dir: Path | None = None,
+) -> list[ZoneEvidence]:
     now = observed_at or datetime.now(UTC)
+    # Feed liveness is a property of the feed, not of any tract, so it is
+    # assessed once here and applied to every zone.
+    feed_health = assess_feeds(raw_dir, now=now) if raw_dir else {}
     con = connect(db_path, read_only=True)
     try:
         rows = con.execute(
@@ -29,6 +38,7 @@ def load_evidence(db_path: Path, *, observed_at: datetime | None = None) -> list
                 z.geoid, z.neighbourhood, z.borough, z.population,
                 z.svi_overall, z.pct_no_vehicle, z.pct_age_65_plus,
                 z.pct_limited_english, z.pct_poverty, z.pct_minority,
+                z.transit_coverage,
                 COALESCE(r.report_count, 0)      AS report_count,
                 r.latest_report_at,
                 w.temperature_f, w.relative_humidity,
@@ -53,12 +63,16 @@ def load_evidence(db_path: Path, *, observed_at: datetime | None = None) -> list
     finally:
         con.close()
 
-    return [_to_evidence(row, now) for row in rows]
+    return [_to_evidence(row, now, feed_health) for row in rows]
 
 
-def _to_evidence(row: tuple, now: datetime) -> ZoneEvidence:
+def _to_evidence(
+    row: tuple,
+    now: datetime,
+    feed_health: dict[str, FeedHealth],
+) -> ZoneEvidence:
     (geoid, neighbourhood, borough, population, svi, no_veh, age65,
-     limeng, poverty, minority, report_count, latest_report_at,
+     limeng, poverty, minority, transit_coverage, report_count, latest_report_at,
      temp_f, humidity, feed_age, alerts) = row
 
     zone = Zone(
@@ -82,7 +96,8 @@ def _to_evidence(row: tuple, now: datetime) -> ZoneEvidence:
         heat_index_f=heat_index_f(temp_f, humidity),
         transit_feed_age_seconds=feed_age,
         transit_alerts=int(alerts or 0),
-        source_reliability=_reliability(zone, latest, temp_f, feed_age, now),
+        source_reliability=_reliability(zone, latest, temp_f, feed_age, now,
+                                        feed_health, transit_coverage),
         observed_at=now,
     )
 
@@ -93,9 +108,19 @@ def _reliability(
     temperature_f: float | None,
     feed_age_seconds: float | None,
     now: datetime,
+    feed_health: dict[str, FeedHealth],
+    transit_coverage: float | None,
 ) -> dict[str, Reliability]:
-    """Day 1 reliability. Freshness and coverage are real; liveness is a
-    placeholder until the silent-failure detectors land on day 2."""
+    """Per-source reliability for one zone.
+
+    Liveness comes from the silent-failure detectors; a source with no poll
+    history keeps a liveness of 1.0 rather than being penalised, because the
+    cadence check still runs from a single observation and "not yet polled
+    repeatedly" is not evidence of a fault.
+    """
+    def liveness_of(source_id: str) -> float:
+        health = feed_health.get(source_id)
+        return health.score if health else 1.0
     return {
         "311": Reliability(
             freshness=_decay(
@@ -103,15 +128,21 @@ def _reliability(
                 REPORT_FRESHNESS_HORIZON.total_seconds(),
             ),
             coverage=1.0 if latest_report_at else 0.0,
+            liveness=liveness_of("311"),
         ),
         "nws": Reliability(
             freshness=1.0 if temperature_f is not None else 0.0,
             coverage=1.0 if temperature_f is not None else 0.0,
+            liveness=liveness_of("nws"),
         ),
         "gtfs_rt": Reliability(
             freshness=_decay(feed_age_seconds,
                              config.SOURCE_CADENCE_SECONDS["gtfs_rt"] * 20),
-            coverage=1.0 if feed_age_seconds is not None else 0.0,
+            # Fraction of the tract within walking distance of a station:
+            # how much of it the realtime feed could ever speak to. A tract at
+            # zero is not safe, it is unobserved.
+            coverage=(transit_coverage or 0.0) if feed_age_seconds is not None else 0.0,
+            liveness=liveness_of("gtfs_rt"),
         ),
         # The vulnerability layer itself has holes. CDC suppresses estimates for
         # small-population tracts, so for those we do not know who lives there

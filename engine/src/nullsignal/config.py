@@ -9,12 +9,15 @@ SUFFICIENCY_THRESHOLD = 0.55
 # --- Reliability --------------------------------------------------------------
 # Declared update cadence per source, in seconds. Freshness decays as
 # exp(-dt / tau), so a feed silent for several multiples of tau scores ~0.
+# Declared publish interval per source -- how often the *upstream* refreshes,
+# which is not the same as how often we poll. Every liveness detector is scaled
+# against these, so setting one too low turns a healthy feed into a false alarm.
 SOURCE_CADENCE_SECONDS = {
-    "gtfs_rt": 30,
-    "nws": 3600,
+    "gtfs_rt": 30,        # realtime trip updates
+    "nws": 10_800,        # forecasts are reissued a few times a day
     "311": 900,
     "airquality": 3600,
-    "cooling_centers": 86400,
+    "cooling_centers": 86_400,
 }
 
 # A feed whose payload has not changed across this many consecutive polls is
@@ -49,7 +52,17 @@ SOURCE_DECISION_WEIGHT = {
 
 # Sources without which a zone cannot be called safe at all. If any is missing,
 # sufficiency is capped below threshold no matter how good the rest looks.
-CRITICAL_SOURCES = frozenset({"nws", "cdc_svi"})
+ALWAYS_CRITICAL_SOURCES = frozenset({"nws", "cdc_svi"})
+
+# Criticality is not a fixed property of a source; it depends on the zone.
+# Where most households have no car, transit is how people reach a cooling
+# centre, so not knowing whether transit is running is a decision-critical gap.
+# Where nearly everyone drives, the same missing feed barely matters.
+TRANSIT_DEPENDENCE_THRESHOLD = 0.5
+CONDITIONALLY_CRITICAL_SOURCES = frozenset({"gtfs_rt"})
+
+# Backwards-compatible alias for the unconditional set.
+CRITICAL_SOURCES = ALWAYS_CRITICAL_SOURCES
 
 # The cap applied when a critical source is absent. Deliberately below
 # SUFFICIENCY_THRESHOLD: a zone missing decision-critical evidence must land in
