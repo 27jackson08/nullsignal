@@ -134,9 +134,57 @@ Two guards keep it informative:
 
 At 83°F: 0 contradictions. Under a simulated 104°F: 425 tracts (18.3%).
 
+## Inference
+
+A hypothesis is a *pair*: what is happening, and whether we can see it.
+
+    hypothesis = (world state, observation regime)
+
+Four worlds x two regimes = eight hypotheses, so the posterior is computed by
+enumeration — exact, and every number traceable to a prior, a likelihood entry
+and a reliability score.
+
+Splitting the pair is the point. A conventional system reasons only over world
+states, so it has no way to represent "this may be bad *and* my feeds may be
+lying about it" and can never conclude it might be blind. Here
+`(heat_stranded, blind)` is a cell the engine can raise probability on.
+
+Two mechanics carry it:
+
+- **A blind regime makes the instruments agree with nothing.** A frozen feed
+  does not emit noise, it replays its last good state — so P(see "normal" |
+  transit failed, blind) is *high*. That asymmetry is what a threshold on the
+  feed's own values can never reach.
+- **Unreliable evidence cannot move the posterior.** Each likelihood is mixed
+  toward uniform in proportion to that source's reliability, so as it goes to
+  zero the observation stops discriminating. Missing data does not push toward
+  safe; it does not push at all. Asserted as an invariant: KL(posterior ‖ prior)
+  decays monotonically to zero.
+
+The regime is scoped to the mobility channel. Modelled globally, a dead subway
+feed also discredited the forecast, and risk *fell* as the engine went blind.
+
+## Deciding what to check next
+
+Exact EVPI over five concrete checks and three responses — small enough to
+enumerate, so every ranking is reproducible.
+
+**VOI answers "which check", not "which zone".** It is deliberately not
+monotone in stakes: information is worth most near a decision boundary and
+nothing once one response dominates whatever the answer is. Ranking zones by
+VOI would put the clearest emergencies last.
+
+Zones are queued by **unresolved harm** — believed harm weighted by remaining
+doubt — which *is* monotone in both vulnerability and uncertainty. That is
+where equity enters the ordering, structurally rather than as a reweighting,
+and it is asserted as an invariant.
+
+Response costs are derived from the risk thresholds rather than hand-set, so a
+tract can never read "confirmed low" beside advice to send crews.
+
 ## Status
 
-Day 3 of 7. See `docs/PLAN.md`.
+Day 4 of 7. See `docs/PLAN.md`.
 
 The suite doubles as a build progress meter: invariants for components not yet
 built are skipped with the day they unlock, rather than quietly passing.
