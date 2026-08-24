@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from ..eval import baseline
 from ..inference import engine, pipeline
+from ..reliability.feeds import FeedHealth, assess_feeds
 from ..sources.snapshot import load_manifest
 from ..store import DB_FILENAME, connect
 from ..types import ZoneAssessment
@@ -62,7 +63,8 @@ def _rebuild() -> None:
             f"no store at {DB_PATH}. Run: uv run nullsignal snapshot && uv run nullsignal build"
         )
 
-    evidence = pipeline.load_evidence(DB_PATH)
+    evidence = pipeline.load_evidence(DB_PATH, raw_dir=RAW_DIR)
+    feed_health = assess_feeds(RAW_DIR)
     geometry = _load_geometry()
     # Calibrated against this snapshot so the comparison is against a
     # dashboard someone would actually run, not one rigged to fail.
@@ -114,7 +116,35 @@ def _rebuild() -> None:
             and f["properties"]["state"] != "CONFIRMED_LOW"
         ),
         "snapshot": _manifest_summary(),
+        "feeds": _feed_summary(feed_health),
     }
+
+
+def _feed_summary(feed_health: dict[str, FeedHealth]) -> list[dict]:
+    """Per-source liveness, including which detectors could not run.
+
+    "Not checked" is reported alongside "checked and fine", because a system
+    premised on the difference cannot collapse it in its own status panel.
+    """
+    return [
+        {
+            "source_id": source_id,
+            "liveness": round(health.score, 4),
+            "poll_count": health.poll_count,
+            "worst_member": health.worst_member,
+            "detectors": [
+                {
+                    "name": detector.name,
+                    "assessable": detector.assessable,
+                    "fired": detector.fired,
+                    "confidence_dead": round(detector.confidence_dead, 4),
+                    "detail": detector.detail,
+                }
+                for detector in health.liveness.detectors
+            ],
+        }
+        for source_id, health in sorted(feed_health.items())
+    ]
 
 
 def _detail(item, ours: ZoneAssessment, theirs: ZoneAssessment) -> dict:
@@ -145,7 +175,13 @@ def _detail(item, ours: ZoneAssessment, theirs: ZoneAssessment) -> dict:
             "missing_critical_sources": list(item.missing_critical_sources),
         },
         "source_reliability": {
-            name: round(rel.score, 4)
+            name: {
+                "score": round(rel.score, 4),
+                "freshness": round(rel.freshness, 4),
+                "coverage": round(rel.coverage, 4),
+                "liveness": round(rel.liveness, 4),
+                "is_critical": name in item.critical_sources,
+            }
             for name, rel in item.source_reliability.items()
         },
         "vulnerability": {
