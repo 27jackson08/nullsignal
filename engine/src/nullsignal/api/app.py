@@ -33,9 +33,10 @@ class EngineState:
     features: list[dict]
     detail: dict[str, dict]
     summary: dict
+    queue: list[dict]
 
 
-state = EngineState(features=[], detail={}, summary={})
+state = EngineState(features=[], detail={}, summary={}, queue=[])
 
 
 @asynccontextmanager
@@ -72,6 +73,7 @@ def _rebuild() -> None:
 
     features: list[dict] = []
     detail: dict[str, dict] = {}
+    queue: list[dict] = []
     counts = {"nullsignal": {}, "baseline": {}}
 
     for item in evidence:
@@ -103,9 +105,30 @@ def _rebuild() -> None:
             })
 
         detail[geoid] = _detail(item, ours, theirs)
+        queue.append({
+            "geoid": geoid,
+            "name": item.zone.name,
+            "borough": item.zone.borough,
+            "population": item.zone.population,
+            "state": ours.state.value,
+            "unresolved_harm": ours.unresolved_harm,
+            "unseen_danger": ours.unseen_danger,
+            "risk": round(ours.risk, 4),
+            "sufficiency": round(ours.sufficiency.score, 4),
+            "decision": ours.current_decision,
+            "next_check": ours.recommended_checks[0].label if ours.recommended_checks else None,
+            "next_check_minutes": (ours.recommended_checks[0].latency_minutes
+                                   if ours.recommended_checks else None),
+        })
 
     state.features = features
     state.detail = detail
+    # Ranked by unresolved harm: what we believe is at stake, weighted by how
+    # unsure we are. Monotone in both vulnerability and doubt, which is what
+    # makes it usable as a queue -- see voi/evpi.unresolved_harm.
+    queue.sort(key=lambda row: -row["unresolved_harm"])
+    state.queue = queue
+
     state.summary = {
         "zone_count": len(evidence),
         "states": counts,
@@ -157,6 +180,20 @@ def _detail(item, ours: ZoneAssessment, theirs: ZoneAssessment) -> dict:
         "state": ours.state.value,
         "baseline_state": theirs.state.value,
         "risk": round(ours.risk, 4),
+        "unseen_danger": ours.unseen_danger,
+        "unresolved_harm": ours.unresolved_harm,
+        "decision": ours.current_decision,
+        "posterior": sorted(
+            ({"hypothesis": k, "probability": round(v, 4)}
+             for k, v in ours.posterior.items()),
+            key=lambda row: -row["probability"],
+        )[:5],
+        "recommended_checks": [
+            {"key": c.key, "label": c.label, "value": c.value,
+             "value_per_cost": c.value_per_cost, "cost": c.cost,
+             "latency_minutes": c.latency_minutes, "detail": c.detail}
+            for c in ours.recommended_checks[:3]
+        ],
         "sufficiency": {
             "score": round(suff.score, 4),
             "measured": {k: round(v, 4) for k, v in suff.measured_terms.items()},
@@ -247,6 +284,12 @@ def _manifest_summary() -> dict:
 @app.get("/api/summary")
 def get_summary() -> dict:
     return state.summary
+
+
+@app.get("/api/queue")
+def get_queue(limit: int = 25) -> dict:
+    """Zones ordered by how much unresolved harm is riding on them."""
+    return {"zones": state.queue[:max(1, min(limit, 200))]}
 
 
 @app.get("/api/zones")
