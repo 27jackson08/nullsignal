@@ -124,6 +124,19 @@ class Sufficiency:
 
 
 @dataclass(frozen=True, slots=True)
+class RecommendedCheck:
+    """A verification step, with what knowing would be worth."""
+
+    key: str
+    label: str
+    value: float            # expected harm averted by knowing the answer
+    value_per_cost: float
+    cost: float
+    latency_minutes: int
+    detail: str = ""
+
+
+@dataclass(frozen=True, slots=True)
 class ZoneAssessment:
     """What the engine concludes about one zone at one tick."""
 
@@ -134,3 +147,7 @@ class ZoneAssessment:
     posterior: dict[str, float] = field(default_factory=dict)
     contributing: dict[str, float] = field(default_factory=dict)  # source -> reliability
     contradictions: tuple[str, ...] = ()
+    recommended_checks: tuple[RecommendedCheck, ...] = ()
+    current_decision: str = ""
+    unseen_danger: float = 0.0
+    unresolved_harm: float = 0.0   # ranking key for operator attention

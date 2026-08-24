@@ -7,107 +7,117 @@ placeholder for a result.
 """
 from __future__ import annotations
 
-from .. import config
 from ..claims.extract import extract as extract_claims
 from ..claims.graph import build as build_contradiction_graph
+from ..claims.types import Subject
 from ..decision import decide
-from ..types import Sufficiency, ZoneAssessment
+from ..types import RecommendedCheck, Sufficiency, ZoneAssessment
+from ..voi import evpi
+from . import bayes, hypotheses
 from .evidence import ZoneEvidence
+from .likelihood import Observations
 
-# Terms not yet backed by real inference. Emptied on day 4.
-STUBBED_TERMS = ("entropy",)
-
-# Heat risk ramps between these two heat-index values.
-HEAT_ONSET_F = 85.0
-HEAT_SEVERE_F = 103.0
-
-# Weighting between hazard exposure and who is exposed to it.
-HAZARD_WEIGHT = 0.6
-VULNERABILITY_WEIGHT = 0.4
+# Every sufficiency term is now backed by real inference.
+STUBBED_TERMS: tuple[str, ...] = ()
 
 
 def assess(evidence: ZoneEvidence) -> ZoneAssessment:
-    """Produce a risk estimate and a sufficiency score, then apply the 2x2."""
-    graph = build_contradiction_graph(
-        extract_claims(evidence, evidence.propensity)
+    """Infer a posterior over the hypothesis space, then apply the 2x2."""
+    claims = extract_claims(evidence, evidence.propensity)
+    graph = build_contradiction_graph(claims)
+
+    prior = hypotheses.prior(
+        transit_dependence=evidence.zone.pct_no_vehicle,
+        vulnerability=evidence.zone.svi_overall,
     )
-    risk = _risk(evidence)
-    sufficiency = _sufficiency(evidence, graph.agreement)
+    posterior = bayes.update(prior, _observations(evidence, claims))
+
+    risk = hypotheses.expected_harm(
+        posterior, evidence.zone.vulnerability_multiplier
+    )
+    sufficiency = Sufficiency(
+        entropy=bayes.confidence(posterior),
+        coverage=evidence.evidence_coverage,
+        contradiction=graph.agreement,
+        staleness=_clamp(evidence.critical_freshness),
+        ceiling=_ceiling(evidence),
+    )
     state = decide(risk, sufficiency.score)
+
+    # Verification is ranked against the same posterior that produced the
+    # verdict, scaled by who lives here -- so equity enters the ordering
+    # through the arithmetic rather than as a later adjustment.
+    harm_scale = evidence.zone.vulnerability_multiplier
+    decision, _ = evpi.best_decision(posterior, harm_scale)
+    checks = tuple(
+        RecommendedCheck(
+            key=ranked.action.key,
+            label=ranked.action.label,
+            value=round(ranked.value, 6),
+            value_per_cost=round(ranked.value_per_cost, 4),
+            cost=ranked.action.cost,
+            latency_minutes=ranked.action.latency_minutes,
+            detail=ranked.action.detail,
+        )
+        for ranked in evpi.rank(posterior, harm_scale=harm_scale)
+    )
 
     return ZoneAssessment(
         geoid=evidence.zone.geoid,
         risk=risk,
         sufficiency=sufficiency,
         state=state,
-        posterior={},
+        posterior={k: round(v, 6) for k, v in posterior.items()},
         contributing={
             name: rel.score for name, rel in evidence.source_reliability.items()
         },
         contradictions=graph.describe(),
+        recommended_checks=checks,
+        current_decision=str(decision),
+        unresolved_harm=round(
+            evpi.unresolved_harm(posterior, sufficiency.score, harm_scale), 6),
+        unseen_danger=round(hypotheses.probability_of_unseen_danger(posterior), 6),
     )
 
 
-def _risk(evidence: ZoneEvidence) -> float:
-    """Hazard intensity scaled by who is standing in it.
+def _observations(evidence: ZoneEvidence, claims) -> Observations:
+    """Lift evidence into the vocabulary the likelihood tables speak.
 
-    Note what is deliberately absent: report volume. Treating more complaints as
-    more risk is precisely the bias that makes quiet neighbourhoods look safe,
-    so raw report counts never enter the risk estimate. They inform
-    *sufficiency* instead.
+    A source with nothing to say passes None, which contributes a factor of 1
+    rather than zero: we did not observe it, which is not the same as having
+    observed it fail to happen.
     """
-    hazard = _heat_hazard(evidence.heat_index_f)
-    exposure = _exposure(evidence)
-    return _clamp(HAZARD_WEIGHT * hazard + VULNERABILITY_WEIGHT * hazard * exposure)
+    by_subject = {claim.subject: claim for claim in claims}
+    heat = by_subject.get(Subject.HEAT_EXPOSURE)
+    transit = by_subject.get(Subject.TRANSIT_SERVICE)
+    distress = by_subject.get(Subject.POPULATION_DISTRESS)
+
+    return Observations(
+        heat_band=heat.value if heat else None,
+        heat_reliability=heat.reliability if heat else 0.0,
+        transit_signal=transit.value if transit else None,
+        transit_reliability=transit.reliability if transit else 0.0,
+        distress=distress.value if distress else None,
+        distress_reliability=distress.reliability if distress else 0.0,
+        critical_liveness=_critical_liveness(evidence),
+        missing_critical_count=len(evidence.missing_critical_sources),
+    )
 
 
-def _heat_hazard(heat_index_f: float | None) -> float:
-    if heat_index_f is None:
-        return 0.0
-    span = HEAT_SEVERE_F - HEAT_ONSET_F
-    return _clamp((heat_index_f - HEAT_ONSET_F) / span)
-
-
-def _exposure(evidence: ZoneEvidence) -> float:
-    """Who is harmed by heat plus a stalled transit system: older residents,
-    households without a vehicle, and generally vulnerable tracts."""
-    zone = evidence.zone
-    factors = [
-        zone.svi_overall,
-        zone.pct_age_65_plus,
-        zone.pct_no_vehicle,
+def _critical_liveness(evidence: ZoneEvidence) -> float:
+    """Liveness of the least-live decision-critical source."""
+    scores = [
+        evidence.source_reliability[name].liveness
+        for name in evidence.critical_sources
+        if name in evidence.source_reliability
     ]
-    known = [f for f in factors if f is not None]
-    if not known:
-        # No vulnerability data is not an argument for low exposure. Assume the
-        # population-weighted midpoint rather than zero.
-        return 0.5
-    return _clamp(sum(known) / len(known))
+    return min(scores) if scores else 1.0
 
 
-def _sufficiency(evidence: ZoneEvidence, agreement: float) -> Sufficiency:
-    """Only terms this build actually measures are populated.
-
-    entropy (day 4) stays None rather than 1.0. Set to
-    1.0 they would contribute a fixed 0.55 of confidence out of nowhere -- more
-    than the decision threshold -- so no amount of genuinely missing evidence
-    could ever push a zone into UNKNOWN. A placeholder that reads as evidence
-    is the precise bug this project exists to detect, and it is no more
-    acceptable here than in a city's dashboard.
-    """
-    missing_critical = evidence.missing_critical_sources
-    return Sufficiency(
-        entropy=None,        # day 4
-        coverage=evidence.evidence_coverage,
-        contradiction=agreement,
-        staleness=_staleness_term(evidence),
-        ceiling=config.CRITICAL_GAP_CEILING if missing_critical else 1.0,
-    )
-
-
-def _staleness_term(evidence: ZoneEvidence) -> float:
-    """How fresh the decision-critical evidence is, worst case."""
-    return _clamp(evidence.critical_freshness)
+def _ceiling(evidence: ZoneEvidence) -> float:
+    from .. import config
+    return (config.CRITICAL_GAP_CEILING
+            if evidence.missing_critical_sources else 1.0)
 
 
 def _clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
