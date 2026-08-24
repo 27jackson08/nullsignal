@@ -1,0 +1,59 @@
+"""Command line entry point."""
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+from .sources.snapshot import run_snapshot
+from .store import DB_FILENAME, build_store
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+DATA_DIR = REPO_ROOT / "data"
+RAW_DIR = DATA_DIR / "raw"
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="nullsignal")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    snap = sub.add_parser("snapshot", help="fetch all public sources to data/raw")
+    snap.add_argument("--days", type=int, default=60,
+                      help="311 lookback window in days")
+    snap.add_argument("--max-requests", type=int, default=200_000)
+    snap.add_argument("--skip", nargs="*", default=[],
+                      choices=["tracts", "svi", "311", "weather", "transit"])
+
+    sub.add_parser("build", help="build the DuckDB store from data/raw")
+
+    serve = sub.add_parser("serve", help="run the API")
+    serve.add_argument("--port", type=int, default=8000)
+    serve.add_argument("--reload", action="store_true")
+
+    args = parser.parse_args(argv)
+
+    if args.command == "snapshot":
+        report = run_snapshot(RAW_DIR, days=args.days,
+                              max_requests=args.max_requests,
+                              skip=frozenset(args.skip))
+        if not report.ok:
+            print("\nsnapshot incomplete:", file=sys.stderr)
+            for name, err in report.failures:
+                print(f"  {name}: {err}", file=sys.stderr)
+            return 1
+        print("\nsnapshot complete")
+        return 0
+
+    if args.command == "build":
+        counts = build_store(RAW_DIR, DATA_DIR / DB_FILENAME)
+        for table, count in counts.items():
+            print(f"  {table:18} {count:>9,}")
+        return 0
+
+    if args.command == "serve":
+        import uvicorn
+        uvicorn.run("nullsignal.api.app:app", host="127.0.0.1",
+                    port=args.port, reload=args.reload)
+        return 0
+
+    return 1
