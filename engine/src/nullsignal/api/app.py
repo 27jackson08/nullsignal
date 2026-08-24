@@ -184,12 +184,35 @@ def _detail(item, ours: ZoneAssessment, theirs: ZoneAssessment) -> dict:
             }
             for name, rel in item.source_reliability.items()
         },
+        "reporting": _reporting_detail(item),
+        "contradictions": list(ours.contradictions),
         "vulnerability": {
             "svi_overall": item.zone.svi_overall,
             "pct_no_vehicle": item.zone.pct_no_vehicle,
             "pct_age_65_plus": item.zone.pct_age_65_plus,
             "multiplier": round(item.zone.vulnerability_multiplier, 3),
         },
+    }
+
+
+def _reporting_detail(item) -> dict:
+    """How readily this tract reports, and what that does to its silence.
+
+    Surfaced because it changes the reading of zero complaints: the same
+    silence means something different in a tract that calls constantly and one
+    that never does.
+    """
+    propensity = item.propensity
+    if propensity is None or not propensity.is_estimated:
+        return {"estimated": False,
+                "note": "too few reporting categories to estimate"}
+    return {
+        "estimated": True,
+        "index": round(propensity.index, 3),
+        "confidence": round(propensity.confidence, 3),
+        "evidential_weight": round(propensity.evidential_weight, 3),
+        "categories": propensity.category_count,
+        "total_reports": propensity.total_reports,
     }
 
 
