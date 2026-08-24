@@ -80,10 +80,16 @@ HYPOTHESES: tuple[Hypothesis, ...] = tuple(
 # cannot reach a cooling centre are the ones who die in heatwaves.
 HARM_BY_WORLD: dict[World, float] = {
     World.NORMAL: 0.0,
-    World.HEAT: 0.35,
+    World.HEAT: 0.55,
     World.HEAT_STRANDED: 1.0,
-    World.LOCAL_FAULT: 0.25,
+    World.LOCAL_FAULT: 0.30,
 }
+# Calibration note: at 0.35, even a tract *confidently* identified as being in
+# dangerous heat, at maximum vulnerability, scored 0.35 risk -- below the 0.45
+# threshold -- and came back CONFIRMED_LOW. The scoreboard caught it: the engine
+# was falsely reassuring about half of a 104F heatwave. At 0.55 a vulnerable
+# tract in confirmed heat clears the threshold and a robust one does not, which
+# is the equity mechanism doing its job rather than a blanket alarm.
 
 # Base rates before any of today's evidence. Deliberately climatological rather
 # than derived from the current forecast: today's heat reading is *evidence*,

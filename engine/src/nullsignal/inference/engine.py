@@ -21,8 +21,13 @@ from .likelihood import Observations
 STUBBED_TERMS: tuple[str, ...] = ()
 
 
-def assess(evidence: ZoneEvidence) -> ZoneAssessment:
-    """Infer a posterior over the hypothesis space, then apply the 2x2."""
+def assess(evidence: ZoneEvidence, *, rank_checks: bool = True) -> ZoneAssessment:
+    """Infer a posterior over the hypothesis space, then apply the 2x2.
+
+    `rank_checks=False` skips the value-of-information pass. Scenario runs
+    score tens of thousands of assessments and never read the ranking, and
+    enumerating it for each one dominated the runtime.
+    """
     claims = extract_claims(evidence, evidence.propensity)
     graph = build_contradiction_graph(claims)
 
@@ -60,7 +65,7 @@ def assess(evidence: ZoneEvidence) -> ZoneAssessment:
             detail=ranked.action.detail,
         )
         for ranked in evpi.rank(posterior, harm_scale=harm_scale)
-    )
+    ) if rank_checks else ()
 
     return ZoneAssessment(
         geoid=evidence.zone.geoid,

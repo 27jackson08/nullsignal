@@ -32,6 +32,10 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.add_parser("build", help="build the DuckDB store from data/raw")
 
+    ev = sub.add_parser("eval", help="run a scenario and print the scoreboard")
+    ev.add_argument("--scenario", default="heatwave-transit-silent-failure")
+    ev.add_argument("--list", action="store_true", help="list available scenarios")
+
     serve = sub.add_parser("serve", help="run the API")
     serve.add_argument("--port", type=int, default=8000)
     serve.add_argument("--reload", action="store_true")
@@ -62,6 +66,11 @@ def main(argv: list[str] | None = None) -> int:
         for table, count in counts.items():
             print(f"  {table:18} {count:>9,}")
         return 0
+
+    if args.command == "eval":
+        from .eval.report import run_evaluation
+        return run_evaluation(REPO_ROOT / "scenarios", DATA_DIR / DB_FILENAME,
+                              RAW_DIR, args.scenario, list_only=args.list)
 
     if args.command == "serve":
         import uvicorn

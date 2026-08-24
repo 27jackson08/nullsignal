@@ -90,14 +90,27 @@ _TRANSIT_GIVEN_WORLD: dict[World, tuple[float, ...]] = {
 # dashboard reading it at face value stays calm through a failure.
 _TRANSIT_GIVEN_BLIND: tuple[float, ...] = (0.78, 0.04, 0.18)
 
-# P(distress | world), faithful regime. Stranded people complain, if they are
-# the kind of tract that complains -- and how much that qualifier bites is
-# carried by `distress_reliability`, which is the tract's evidential weight.
+# P(distress | world). Note how weakly "low" discriminates: 0.25 under
+# stranding against 0.18 under normal conditions. Quiet is only slightly more
+# surprising in a crisis than out of one.
+#
+# That is deliberate, and it is the thesis stated as a number. An earlier table
+# put P(low | stranded) at 0.08 -- asserting that stranded people almost
+# certainly complain -- and a scenario where reporting was suppressed while
+# conditions worsened drove NullSignal to *confidently* call half the affected
+# tracts safe. The suppression worked, because the model had been told silence
+# means safety.
+#
+# People stranded in a heatwave are frequently the least able to call: elderly,
+# isolated, without a working phone, without English, or long past expecting a
+# response. An engine built to notice that cannot also assume the opposite in
+# its likelihoods. Elevated reporting remains strong evidence; its absence is
+# close to none.
 _DISTRESS_GIVEN_WORLD: dict[World, tuple[float, ...]] = {
     World.NORMAL:        (0.18, 0.72, 0.10),
-    World.HEAT:          (0.10, 0.52, 0.38),
-    World.HEAT_STRANDED: (0.08, 0.32, 0.60),
-    World.LOCAL_FAULT:   (0.12, 0.48, 0.40),
+    World.HEAT:          (0.20, 0.48, 0.32),
+    World.HEAT_STRANDED: (0.25, 0.35, 0.40),
+    World.LOCAL_FAULT:   (0.20, 0.45, 0.35),
 }
 
 # How sharply a missing decision-critical source argues for the blind regime.
