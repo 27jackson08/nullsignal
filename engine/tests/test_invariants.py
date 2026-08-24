@@ -172,3 +172,39 @@ def test_unknown_vulnerability_does_not_deprioritise_a_zone():
     assert unknown > least_vulnerable
     assert low < unknown < high
     assert not make_zone(svi_overall=None).vulnerability_is_known
+
+
+# --- silent failure changes our verdict, and only ours ------------------------
+
+def test_frozen_feed_changes_our_verdict_but_not_the_baseline():
+    """A feed that is up and frozen must move us and cannot move a threshold.
+
+    This is the day-5 scoreboard in miniature. The baseline sees HTTP 200 and a
+    plausible payload, so its inputs are unchanged and its output is identical
+    by construction -- not because it is badly tuned, but because a threshold
+    on values cannot represent a doubt about whether the values are real.
+    """
+    transit_dependent = make_zone(pct_no_vehicle=0.8)
+    healthy = {n: Reliability() for n in ("311", "nws", "gtfs_rt", "cdc_svi")}
+    frozen = {**healthy, "gtfs_rt": Reliability(liveness=0.0)}
+
+    before = make_evidence(zone=transit_dependent, sources=healthy, heat_index_f=70.0)
+    after = make_evidence(zone=transit_dependent, sources=frozen, heat_index_f=70.0)
+
+    assert engine.assess(before).state is DecisionState.CONFIRMED_LOW
+    assert engine.assess(after).state is DecisionState.UNKNOWN
+
+    # The dashboard cannot tell the two situations apart.
+    assert baseline.assess(before).state is baseline.assess(after).state
+
+
+def test_a_frozen_feed_is_ignored_where_nobody_depends_on_it():
+    """The same frozen feed, in a tract where almost everyone drives, is not a
+    decision-critical gap. Flagging it anyway would bury the tracts that matter."""
+    car_dependent = make_zone(pct_no_vehicle=0.05)
+    frozen = {n: Reliability() for n in ("311", "nws", "gtfs_rt", "cdc_svi")}
+    frozen["gtfs_rt"] = Reliability(liveness=0.0)
+
+    evidence = make_evidence(zone=car_dependent, sources=frozen, heat_index_f=70.0)
+    assert "gtfs_rt" not in evidence.missing_critical_sources
+    assert engine.assess(evidence).state is DecisionState.CONFIRMED_LOW
