@@ -1,0 +1,97 @@
+"""Contradiction detection across sources.
+
+The rule that matters here is what we do *not* do: contradictions are never
+fused. Averaging "transit halted" with "transit normal" into "mildly degraded"
+would launder a crisis into a shrug, and produce a confident-looking number
+with nothing behind it. A conflict widens uncertainty instead -- it lowers
+sufficiency, leaving the risk estimate where it was and the decision unmade.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from .types import Claim, Contradiction, Subject
+
+# Heat bands at which residents of a normally-vocal tract would be expected to
+# call 311 about something.
+DANGEROUS_HEAT = frozenset({"high", "extreme"})
+
+# Contradiction mass at which sufficiency is fully forfeit.
+SATURATION_MASS = 1.0
+
+
+@dataclass(frozen=True, slots=True)
+class ContradictionGraph:
+    claims: tuple[Claim, ...]
+    contradictions: tuple[Contradiction, ...]
+
+    @property
+    def mass(self) -> float:
+        """Total weight of conflict, capped.
+
+        Summed rather than maxed, unlike the liveness detectors: two different
+        pairs of sources disagreeing about two different things really is worse
+        than one, because each conflict is its own independent unresolved
+        question.
+        """
+        return min(SATURATION_MASS, sum(c.weight for c in self.contradictions))
+
+    @property
+    def agreement(self) -> float:
+        """The sufficiency term: 1 when nothing conflicts, 0 when saturated."""
+        return 1.0 - self.mass
+
+    def describe(self) -> tuple[str, ...]:
+        return tuple(c.describe() for c in self.contradictions)
+
+
+def build(claims: tuple[Claim, ...]) -> ContradictionGraph:
+    by_subject: dict[Subject, list[Claim]] = {}
+    for claim in claims:
+        by_subject.setdefault(claim.subject, []).append(claim)
+
+    found: list[Contradiction] = []
+    found.extend(_direct_conflicts(by_subject))
+    found.extend(_expected_but_absent(by_subject))
+    return ContradictionGraph(claims, tuple(found))
+
+
+def _direct_conflicts(by_subject: dict[Subject, list[Claim]]) -> list[Contradiction]:
+    """Two sources asserting different values for the same proposition."""
+    conflicts: list[Contradiction] = []
+    for subject, group in by_subject.items():
+        for i, left in enumerate(group):
+            for right in group[i + 1:]:
+                if left.value != right.value:
+                    conflicts.append(Contradiction(
+                        left, right,
+                        reason=f"two sources disagree about {subject}",
+                    ))
+    return conflicts
+
+
+def _expected_but_absent(by_subject: dict[Subject, list[Claim]]) -> list[Contradiction]:
+    """Silence where this tract would normally be speaking.
+
+    Dangerous heat with falling complaint volume is only surprising in a tract
+    whose silence is worth reading -- which is what the propensity model
+    measures, and why the distress claim carries the tract's evidential weight
+    as its reliability rather than the feed's uptime. In a tract that rarely
+    calls 311 at all, quiet is the normal condition and no conflict is raised.
+    """
+    heat_claims = by_subject.get(Subject.HEAT_EXPOSURE, [])
+    distress_claims = by_subject.get(Subject.POPULATION_DISTRESS, [])
+
+    conflicts: list[Contradiction] = []
+    for heat in heat_claims:
+        if heat.value not in DANGEROUS_HEAT:
+            continue
+        for distress in distress_claims:
+            if distress.value != "low":
+                continue
+            conflicts.append(Contradiction(
+                heat, distress,
+                reason=("dangerous heat, yet this tract has gone quieter than "
+                        "its own usual rate"),
+            ))
+    return conflicts
