@@ -5,13 +5,14 @@ import { StateLegend } from "./components/legend/StateLegend";
 import { EvidencePanel } from "./components/panel/EvidencePanel";
 import { FeedHealthPanel } from "./components/feeds/FeedHealthPanel";
 import { ZoneMap, type ViewMode } from "./components/map/ZoneMap";
+import { useSelectedZone } from "./hooks/useSelectedZone";
 import { useZones } from "./hooks/useZones";
 import "./styles/global.css";
 
 export default function App() {
   const { zones, summary, error, isLoading } = useZones();
   const [mode, setMode] = useState<ViewMode>("nullsignal");
-  const [selectedGeoid, setSelectedGeoid] = useState<string | null>(null);
+  const [selectedGeoid, setSelectedGeoid] = useSelectedZone();
 
   return (
     <div className="app-shell">

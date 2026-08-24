@@ -26,6 +26,18 @@ const UNLOCK_DAY: Record<string, string> = {
   contradiction: "Contradiction graph",
 };
 
+/** What a tract's reporting level means for how its silence should be read. */
+function describeReporting(index: number): string {
+  if (index < 0.8) {
+    return "This tract reports less than a comparable one, so hearing nothing "
+      + "from it is weak evidence that nothing is wrong.";
+  }
+  if (index > 1.25) {
+    return "This tract reports readily, so silence here is genuinely informative.";
+  }
+  return "This tract reports at about the typical rate.";
+}
+
 export function EvidencePanel({ geoid }: EvidencePanelProps) {
   const { detail, error } = useZoneDetail(geoid);
 
@@ -50,7 +62,7 @@ export function EvidencePanel({ geoid }: EvidencePanelProps) {
   const meta = STATE_META[detail.state];
   const baselineMeta = STATE_META[detail.baseline_state];
   const overclaimed = isReassuring(detail.baseline_state) && !isReassuring(detail.state);
-  const { sufficiency, evidence, vulnerability } = detail;
+  const { sufficiency, evidence, vulnerability, reporting, contradictions } = detail;
 
   return (
     <section className="evidence-panel" aria-live="polite">
@@ -91,6 +103,17 @@ export function EvidencePanel({ geoid }: EvidencePanelProps) {
         </div>
       )}
 
+      {contradictions.length > 0 && (
+        <div className="contradictions">
+          <p className="label">Sources disagree</p>
+          <ul>{contradictions.map((line) => <li key={line}>{line}</li>)}</ul>
+          <p className="contradiction-note">
+            Conflicts widen the doubt rather than being averaged away &mdash;
+            the risk estimate is unchanged, the confidence in it is not.
+          </p>
+        </div>
+      )}
+
       <section className="block">
         <p className="label">Sufficiency &middot; {sufficiency.score.toFixed(2)}</p>
         {Object.entries(sufficiency.measured).map(([term, value]) => (
@@ -125,6 +148,27 @@ export function EvidencePanel({ geoid }: EvidencePanelProps) {
             note={reliability.is_critical ? "decision-critical here" : undefined}
           />
         ))}
+      </section>
+
+      <section className="block">
+        <p className="label">Reporting behaviour</p>
+        {reporting.estimated ? (
+          <>
+            <dl className="facts">
+              <div>
+                <dt>Reporting index</dt>
+                <dd className="numeric">{reporting.index?.toFixed(2)}&times; typical</dd>
+              </div>
+              <div>
+                <dt>Weight of its silence</dt>
+                <dd className="numeric">{reporting.evidential_weight?.toFixed(2)}</dd>
+              </div>
+            </dl>
+            <p className="block-note">{describeReporting(reporting.index ?? 1)}</p>
+          </>
+        ) : (
+          <p className="block-note">{reporting.note}</p>
+        )}
       </section>
 
       <section className="block">

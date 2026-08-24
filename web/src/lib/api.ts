@@ -38,6 +38,16 @@ export interface ZoneDetail {
     missing_critical_sources: string[];
   };
   source_reliability: Record<string, SourceReliability>;
+  reporting: {
+    estimated: boolean;
+    note?: string;
+    index?: number;
+    confidence?: number;
+    evidential_weight?: number;
+    categories?: number;
+    total_reports?: number;
+  };
+  contradictions: string[];
   vulnerability: {
     svi_overall: number | null;
     pct_no_vehicle: number | null;
