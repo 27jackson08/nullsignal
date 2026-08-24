@@ -182,9 +182,53 @@ and it is asserted as an invariant.
 Response costs are derived from the risk thresholds rather than hand-set, so a
 tract can never read "confirmed low" beside advice to send crews.
 
+## The scoreboard
+
+```bash
+uv run nullsignal eval                    # canonical scenario, ~7s
+uv run nullsignal eval --list             # all scenarios
+```
+
+Both engines see identical corrupted evidence; neither sees ground truth. The
+scenario holds *what is true* and *what breaks in our ability to see it* apart,
+which is what makes a run a measurement rather than a demonstration.
+
+**heatwave-transit-silent-failure** — heat reaches the low nineties, below any
+advisory threshold. The transit feed freezes (HTTP 200, plausible payload,
+normal service). Two hours later service actually stops and 311 reporting
+collapses. No single reading crosses a threshold; the danger is the combination.
+
+| engine | false reassurance | residents | false alarm | warning |
+| --- | --- | --- | --- | --- |
+| baseline | **83.1%** | 3,889,567 | 8.7% | 0h |
+| NullSignal | **0.0%** | 0 | 23.8% | **2h** |
+
+> **50.7%** of the residents the conventional dashboard kept calling safe are in
+> the most vulnerable quintile, against **40.2%** citywide — **1.26x**.
+
+The two hours are the point: NullSignal stops confirming safety when the feed
+freezes, not when the harm arrives. It knows it has gone blind before there is
+anything to see.
+
+### Where it loses
+
+A scoreboard that only shows wins is a slide. Two of four scenarios are
+uncomfortable, and the tool says so in its own output:
+
+- **sensor-drift-masking-heat** — *NullSignal is beaten, 96.6% against 83.1%.*
+  A thermometer drifting a few degrees per hour defeats every liveness
+  detector by construction: the payload changes, the clock advances, each
+  reading is defensible. With one weather source per borough there is no
+  redundancy to catch it. The fix is cross-source disagreement, not another
+  detector.
+- **reporting-collapse** — the baseline scores 0% false reassurance by alarming
+  60% of the time when nothing is wrong. A stopped clock. NullSignal takes
+  31.4% against a 15.4% false-alarm rate; the report flags the comparison
+  rather than claiming the win.
+
 ## Status
 
-Day 4 of 7. See `docs/PLAN.md`.
+Day 5 of 7. See `docs/PLAN.md`.
 
 The suite doubles as a build progress meter: invariants for components not yet
 built are skipped with the day they unlock, rather than quietly passing.
