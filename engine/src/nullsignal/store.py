@@ -22,6 +22,11 @@ SVI_MISSING_SENTINEL = -999
 # Everything downstream wants 0-1, so normalisation happens once, here.
 PERCENT_SCALE = 100.0
 
+# Recent-activity window. Anchored to the newest record in the snapshot rather
+# than to wall-clock now, so a snapshot taken last week still yields a
+# meaningful "recently" and the comparison stays reproducible.
+RECENT_WINDOW_HOURS = 48
+
 # Standard transit-access buffer: the distance people will walk to a station.
 TRANSIT_WALK_BUFFER_METRES = 800
 
@@ -51,6 +56,7 @@ def build_store(raw_dir: Path, db_path: Path) -> dict[str, int]:
         counts["zones"] = _build_zones(con)
         counts["reports"] = _load_service_requests(con, raw_dir / "311_requests.json")
         counts["reports_by_zone"] = _aggregate_reports(con)
+        counts["reports_by_category"] = _aggregate_reports_by_category(con)
         counts["stations"] = _load_stations(con, raw_dir / "gtfs_stations.json")
         counts["transit_coverage"] = _compute_transit_coverage(con)
         counts["weather"] = _load_weather(con, raw_dir / "nws_forecast.json")
@@ -167,18 +173,50 @@ def _aggregate_reports(con: duckdb.DuckDBPyConnection) -> int:
     con.execute(
         """
         CREATE OR REPLACE TABLE reports_by_zone AS
+        WITH anchor AS (SELECT MAX(created_at) AS newest FROM service_requests)
         SELECT
             z.geoid,
             COUNT(*)                                   AS report_count,
             COUNT(DISTINCT r.complaint_type)           AS distinct_complaint_types,
-            MAX(r.created_at)                          AS latest_report_at
+            MAX(r.created_at)                          AS latest_report_at,
+            SUM(CASE WHEN r.created_at
+                     > (SELECT newest FROM anchor) - INTERVAL {hours} HOUR
+                     THEN 1 ELSE 0 END)                AS recent_report_count,
+            date_diff('hour', MIN(r.created_at),
+                      (SELECT newest FROM anchor))     AS window_hours
         FROM service_requests r
         JOIN zones z
           ON ST_Within(ST_Point(r.longitude, r.latitude), z.geom)
         GROUP BY z.geoid
-        """
+        """.format(hours=RECENT_WINDOW_HOURS)
     )
     return _count(con, "reports_by_zone")
+
+
+def _aggregate_reports_by_category(con: duckdb.DuckDBPyConnection) -> int:
+    """Reports per tract per category, using the city's own agency taxonomy.
+
+    Category matters because reporting bias lives in the *mix*, not the volume:
+    per-capita 311 volume is nearly flat across vulnerability quintiles in NYC,
+    while composition differs sharply. A single per-tract propensity scalar
+    would average that structure away and find nothing.
+    """
+    con.execute(
+        """
+        CREATE OR REPLACE TABLE reports_by_zone_category AS
+        SELECT
+            z.geoid,
+            r.agency                     AS category,
+            COUNT(*)                     AS report_count,
+            MAX(r.created_at)            AS latest_report_at
+        FROM service_requests r
+        JOIN zones z
+          ON ST_Within(ST_Point(r.longitude, r.latitude), z.geom)
+        WHERE r.agency IS NOT NULL
+        GROUP BY z.geoid, r.agency
+        """
+    )
+    return _count(con, "reports_by_zone_category")
 
 
 def _load_stations(con: duckdb.DuckDBPyConnection, path: Path) -> int:

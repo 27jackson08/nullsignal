@@ -69,6 +69,14 @@ CRITICAL_SOURCES = ALWAYS_CRITICAL_SOURCES
 # UNKNOWN, never in CONFIRMED_LOW.
 CRITICAL_GAP_CEILING = 0.40
 
+# --- Reporting tempo ---------------------------------------------------------
+RECENT_WINDOW_HOURS = 48
+
+# A tract reporting below this share of its own usual rate has gone quiet.
+QUIET_TEMPO = 0.6
+# ...and above this, it is visibly agitated.
+ELEVATED_TEMPO = 1.6
+
 # --- Harm model ---------------------------------------------------------------
 # Vulnerability multiplier spans this range as SVI goes 0 -> 1. Verification in
 # the most vulnerable tracts is worth ~3x the same check in the least.
