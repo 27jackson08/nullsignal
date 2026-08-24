@@ -1,0 +1,20 @@
+name: honest-outage
+description: >
+  The control case. The transit feed does not lie - it stops answering
+  entirely. This is the failure mode every monitoring system already catches,
+  and the point of running it is to show the difference: a loud failure costs
+  almost nothing to detect, which is exactly why the quiet one is dangerous.
+
+duration_hours: 12
+tick_hours: 1
+
+timeline:
+  - at_hour: 0
+    heat_index_f: 88
+  - at_hour: 5
+    heat_index_f: 94
+  - at_hour: 6
+    inject: {source: gtfs_rt, mode: DROPOUT}
+    note: feed goes dark - visibly, unmistakably
+  - at_hour: 8
+    transit_disrupted: true

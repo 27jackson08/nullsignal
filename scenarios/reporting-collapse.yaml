@@ -1,0 +1,23 @@
+name: reporting-collapse
+description: >
+  Every feed is healthy. Every instrument is telling the truth. What changes is
+  the people: 311 reporting collapses in the affected tracts while conditions
+  worsen - fear, distrust, a language barrier, a phone line that no longer
+  works.
+
+  A dashboard that reads low complaint volume as low risk gets this exactly
+  backwards, and gets it backwards hardest where reporting was already thin.
+
+duration_hours: 12
+tick_hours: 1
+
+timeline:
+  - at_hour: 0
+    heat_index_f: 86
+  - at_hour: 4
+    heat_index_f: 95
+  - at_hour: 5
+    transit_disrupted: true
+  - at_hour: 6
+    inject: {source: "311", mode: SUPPRESS, factor: 0.05}
+    note: reporting all but stops in the affected tracts

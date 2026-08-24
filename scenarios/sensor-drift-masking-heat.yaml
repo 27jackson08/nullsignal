@@ -1,0 +1,25 @@
+name: sensor-drift-masking-heat
+description: >
+  No outage at all. The weather feed answers every request with a plausible
+  reading, but its calibration is drifting cool - a few degrees per hour, each
+  value defensible on its own. Transit fails during the drift.
+
+  Nothing here would trip a liveness check: the payload changes, the clock
+  advances, the numbers look like weather. The failure is only visible as a
+  disagreement between the drifting sensor and everything else.
+
+duration_hours: 12
+tick_hours: 1
+
+timeline:
+  - at_hour: 0
+    heat_index_f: 88
+  - at_hour: 3
+    heat_index_f: 96
+    note: genuinely hot now
+  - at_hour: 4
+    inject: {source: nws, mode: SLOW_DRIFT, drift_f: 3.0}
+    note: thermometer begins reading cool
+  - at_hour: 6
+    transit_disrupted: true
+    note: service stops while the forecast understates the heat

@@ -1,0 +1,43 @@
+name: heatwave-transit-silent-failure
+description: >
+  Heat climbs to the low nineties - uncomfortable, but below the level at which
+  any city issues a heat advisory. Then the transit realtime feed quietly
+  freezes: HTTP 200, plausible payload, normal service. Two hours later service
+  actually stops, and 311 reporting collapses in the affected tracts.
+
+  No single reading crosses a threshold. The danger is the combination: people
+  who depend on transit, in heat that is survivable only if you can leave it,
+  with no way to reach a cooling centre - and an instrument that is reporting
+  normal service because it stopped reporting at all.
+
+duration_hours: 14
+tick_hours: 1
+
+timeline:
+  - at_hour: 0
+    heat_index_f: 84
+    note: warm morning, everything nominal
+
+  - at_hour: 4
+    heat_index_f: 90
+    note: heat building, still short of any advisory threshold
+
+  - at_hour: 6
+    heat_index_f: 94
+    note: dangerous for anyone who cannot leave it, unremarkable for anyone who can
+
+  - at_hour: 7
+    inject: {source: gtfs_rt, mode: STALE_BUT_200}
+    note: transit feed freezes, still answering 200 with normal service
+
+  - at_hour: 9
+    transit_disrupted: true
+    note: service actually stops - invisible to anyone reading the frozen feed
+
+  - at_hour: 10
+    inject: {source: "311", mode: SUPPRESS, factor: 0.15}
+    note: reporting collapses in the affected tracts
+
+  - at_hour: 13
+    heat_index_f: 91
+    note: heat easing slightly, transit still down
