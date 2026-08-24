@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+node_modules/
+web/dist/
+data/nullsignal.duckdb
+.env
+
+# Large raw payload is committed gzipped instead (see data/raw/*.gz)
+data/raw/311_requests.json
+data/raw/nyc_tracts.json

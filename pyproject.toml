@@ -1,0 +1,34 @@
+[project]
+name = "nullsignal"
+version = "0.1.0"
+description = "Treat missing evidence as risk, not reassurance."
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "duckdb>=1.1",
+    "numpy>=2.0",
+    "scipy>=1.14",
+    "pandas>=2.2",
+    "httpx>=0.28",
+    "pydantic>=2.9",
+    "pyyaml>=6.0",
+    "gtfs-realtime-bindings>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.3", "pytest-cov>=6.0"]
+
+[project.scripts]
+nullsignal = "nullsignal.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["engine/src/nullsignal"]
+
+[tool.pytest.ini_options]
+testpaths = ["engine/tests"]
+pythonpath = ["engine/src", "engine/tests"]
