@@ -79,9 +79,64 @@ Two rules keep them honest, both learned the hard way:
 
 Detectors that cannot run report as *not checked*, never as passing.
 
+## Reporting bias
+
+311 report counts are not incident counts. Propensity is estimated from the
+structure of *what* a tract reports, not how much:
+
+```
+log rate(zone, category) = alpha(category) + beta(zone) + delta(zone, category)
+```
+
+`beta` is the component common to every category, so a tract that reports
+unusually much across all of them is a high-propensity tract, while a spike
+confined to one category stays in the residual as hazard. Deliberately no
+vulnerability covariates: regressing reports on SVI would let the model absorb
+"more vulnerable means fewer reports" as an expected pattern and fit away the
+exact bias it exists to measure.
+
+The output feeds one thing — **what a tract's silence is worth**. South
+Williamsburg files 9 reports in 60 days for 5,991 residents (index 0.16), so its
+311 coverage drops to 0.11. Hearing nothing from it is close to no information.
+
+### What the data actually says
+
+Testing the premise honestly: **NYC 311 propensity does not fall with
+vulnerability.** It is flat across SVI quintiles (correlation +0.04), and
+composite evidence availability is *higher* for more vulnerable tracts, which
+are denser and better served by transit.
+
+The real finding is sharper:
+
+> **70.7% of residents in evidence blind spots are in the most vulnerable
+> quintile, against 24.3% citywide** — 2.9x over-representation.
+
+It is not that vulnerable neighbourhoods are systematically less visible. It is
+that where the system goes blind, it goes blind about the people who can least
+afford it: 207,067 residents, 146,376 of them in the top SVI quintile.
+
+## Contradictions
+
+Conflicts are never fused. Averaging "transit halted" with "transit normal"
+into "mildly degraded" would launder a crisis into a shrug. A contradiction
+lowers *sufficiency* and leaves the risk estimate untouched — a disagreement is
+not a measurement.
+
+The rule that earns the propensity model its keep: dangerous heat with falling
+complaint volume is a contradiction **only where silence is worth reading**.
+Two guards keep it informative:
+
+- **Tempo, not absolute rate.** Measured against a tract's own longer-run rate.
+  A fixed cut per 1,000 residents sits above or below almost the whole city, so
+  it fired on 94% of tracts — a contradiction that fires everywhere says nothing.
+- **Only tracts whose quiet is meaningful.** Where a tract barely reports at
+  all, quiet is the normal condition.
+
+At 83°F: 0 contradictions. Under a simulated 104°F: 425 tracts (18.3%).
+
 ## Status
 
-Day 2 of 7. See `docs/PLAN.md`.
+Day 3 of 7. See `docs/PLAN.md`.
 
 The suite doubles as a build progress meter: invariants for components not yet
 built are skipped with the day they unlock, rather than quietly passing.
