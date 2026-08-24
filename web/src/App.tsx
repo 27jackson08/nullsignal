@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AppHeader } from "./components/header/AppHeader";
 import { StateLegend } from "./components/legend/StateLegend";
 import { EvidencePanel } from "./components/panel/EvidencePanel";
+import { FeedHealthPanel } from "./components/feeds/FeedHealthPanel";
 import { ZoneMap, type ViewMode } from "./components/map/ZoneMap";
 import { useZones } from "./hooks/useZones";
 import "./styles/global.css";
@@ -32,6 +33,7 @@ export default function App() {
               <ZoneMap zones={zones} mode={mode} selectedGeoid={selectedGeoid}
                        onSelect={setSelectedGeoid} />
               <StateLegend summary={summary} mode={mode} />
+              <FeedHealthPanel feeds={summary?.feeds ?? []} />
             </>
           )}
         </main>

@@ -37,7 +37,7 @@ export interface ZoneDetail {
     transit_feed_age_seconds: number | null;
     missing_critical_sources: string[];
   };
-  source_reliability: Record<string, number>;
+  source_reliability: Record<string, SourceReliability>;
   vulnerability: {
     svi_overall: number | null;
     pct_no_vehicle: number | null;
@@ -48,6 +48,30 @@ export interface ZoneDetail {
 
 export type ZoneCollection = FeatureCollection<MultiPolygon, ZoneProperties>;
 
+export interface SourceReliability {
+  score: number;
+  freshness: number;
+  coverage: number;
+  liveness: number;
+  is_critical: boolean;
+}
+
+export interface Detector {
+  name: string;
+  assessable: boolean;
+  fired: boolean;
+  confidence_dead: number;
+  detail: string;
+}
+
+export interface FeedHealth {
+  source_id: string;
+  liveness: number;
+  poll_count: number;
+  worst_member: string | null;
+  detectors: Detector[];
+}
+
 export interface Summary {
   zone_count: number;
   states: {
@@ -56,6 +80,7 @@ export interface Summary {
   };
   disagreements: number;
   reassured_by_baseline_only: number;
+  feeds: FeedHealth[];
   snapshot: {
     available: boolean;
     snapshot_at?: string;

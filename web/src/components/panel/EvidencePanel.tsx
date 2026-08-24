@@ -113,8 +113,17 @@ export function EvidencePanel({ geoid }: EvidencePanelProps) {
 
       <section className="block">
         <p className="label">Source reliability</p>
-        {Object.entries(detail.source_reliability).map(([source, value]) => (
-          <MeterRow key={source} label={SOURCE_LABELS[source] ?? source} value={value} />
+        <p className="block-note">
+          Which sources are decision-critical depends on the tract: transit
+          counts here only where households lack cars.
+        </p>
+        {Object.entries(detail.source_reliability).map(([source, reliability]) => (
+          <MeterRow
+            key={source}
+            label={SOURCE_LABELS[source] ?? source}
+            value={reliability.score}
+            note={reliability.is_critical ? "decision-critical here" : undefined}
+          />
         ))}
       </section>
 

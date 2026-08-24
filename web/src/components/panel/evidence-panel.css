@@ -121,3 +121,10 @@
     border-top: 1px solid var(--rule);
   }
 }
+
+.block-note {
+  margin: 0 0 var(--space-2);
+  font-size: .72rem;
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
