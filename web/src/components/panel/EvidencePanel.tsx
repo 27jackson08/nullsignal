@@ -21,6 +21,18 @@ const TERM_LABELS: Record<string, string> = {
   staleness: "Freshness",
 };
 
+/** Plain readings of the (world, regime) hypothesis keys. */
+const HYPOTHESIS_LABELS: Record<string, string> = {
+  "normal/faithful": "Nothing unusual",
+  "normal/blind": "Looks normal, but we cannot see transit",
+  "heat/faithful": "Dangerous heat, mobility intact",
+  "heat/blind": "Dangerous heat, transit unverified",
+  "heat_stranded/faithful": "Heat and transit failure — people stranded",
+  "heat_stranded/blind": "Stranded, and hidden from us",
+  "local_fault/faithful": "Localised infrastructure fault",
+  "local_fault/blind": "Local fault, transit unverified",
+};
+
 const UNLOCK_DAY: Record<string, string> = {
   entropy: "Bayesian layer",
   contradiction: "Contradiction graph",
@@ -63,6 +75,7 @@ export function EvidencePanel({ geoid }: EvidencePanelProps) {
   const baselineMeta = STATE_META[detail.baseline_state];
   const overclaimed = isReassuring(detail.baseline_state) && !isReassuring(detail.state);
   const { sufficiency, evidence, vulnerability, reporting, contradictions } = detail;
+  const nextCheck = detail.recommended_checks[0];
 
   return (
     <section className="evidence-panel" aria-live="polite">
@@ -113,6 +126,35 @@ export function EvidencePanel({ geoid }: EvidencePanelProps) {
           </p>
         </div>
       )}
+
+      {nextCheck && (
+        <div className="next-check">
+          <p className="label">Highest-value next check</p>
+          <p className="check-label">{nextCheck.label}</p>
+          <p className="check-detail">{nextCheck.detail}</p>
+          <dl className="check-meta">
+            <div><dt>Time</dt><dd className="numeric">{nextCheck.latency_minutes} min</dd></div>
+            <div><dt>Value per cost</dt><dd className="numeric">{nextCheck.value_per_cost.toFixed(1)}&times;</dd></div>
+            <div><dt>Response now</dt><dd>{detail.decision}</dd></div>
+          </dl>
+        </div>
+      )}
+
+      <section className="block">
+        <p className="label">What might be happening</p>
+        {detail.posterior.map((row) => (
+          <MeterRow key={row.hypothesis}
+                    label={HYPOTHESIS_LABELS[row.hypothesis] ?? row.hypothesis}
+                    value={row.probability} />
+        ))}
+        {detail.unseen_danger > 0.02 && (
+          <p className="block-note unseen">
+            {(detail.unseen_danger * 100).toFixed(0)}% of the belief sits in
+            scenarios where something is wrong <em>and</em> the instruments are
+            not showing it.
+          </p>
+        )}
+      </section>
 
       <section className="block">
         <p className="label">Sufficiency &middot; {sufficiency.score.toFixed(2)}</p>

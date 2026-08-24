@@ -48,6 +48,14 @@ export interface ZoneDetail {
     total_reports?: number;
   };
   contradictions: string[];
+  unseen_danger: number;
+  unresolved_harm: number;
+  decision: string;
+  posterior: { hypothesis: string; probability: number }[];
+  recommended_checks: {
+    key: string; label: string; value: number; value_per_cost: number;
+    cost: number; latency_minutes: number; detail: string;
+  }[];
   vulnerability: {
     svi_overall: number | null;
     pct_no_vehicle: number | null;
