@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from .. import config
+from ..bias.propensity import Propensity
 from ..types import Reliability, Zone
 
 # Sources we expect to inform a heat/transit decision for every zone. Coverage
@@ -25,12 +26,15 @@ class ZoneEvidence:
 
     zone: Zone
     report_count: int
+    recent_report_count: int
+    report_window_hours: float
     latest_report_at: datetime | None
     heat_index_f: float | None
     transit_feed_age_seconds: float | None
     transit_alerts: int
     source_reliability: dict[str, Reliability]
     observed_at: datetime
+    propensity: Propensity | None = None
 
     @property
     def present_sources(self) -> tuple[str, ...]:
@@ -55,6 +59,25 @@ class ZoneEvidence:
             for name, weight in weights.items()
         )
         return min(actual / ideal, 1.0)
+
+    @property
+    def reporting_tempo(self) -> float | None:
+        """Recent reporting rate against this tract's own longer-run rate.
+
+        Self-normalising on purpose. An absolute "reports per 1,000 residents"
+        cut cannot work: the citywide median is 20 per 1,000 over 60 days, so
+        any fixed threshold either fires on almost every tract or on none. What
+        carries information is a tract going quieter *than itself*.
+        """
+        if self.report_count <= 0 or self.report_window_hours <= 0:
+            return None
+        from .. import config as _config
+        expected = self.report_count * (
+            _config.RECENT_WINDOW_HOURS / self.report_window_hours
+        )
+        if expected <= 0:
+            return None
+        return self.recent_report_count / expected
 
     @property
     def critical_sources(self) -> frozenset[str]:

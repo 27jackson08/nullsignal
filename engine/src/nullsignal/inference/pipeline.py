@@ -9,6 +9,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from .. import config
+from ..bias.propensity import Propensity, PropensityModel, fit as fit_propensity
 from ..heat import heat_index_f
 from ..reliability.feeds import FeedHealth, assess_feeds
 from ..store import connect
@@ -39,7 +40,9 @@ def load_evidence(
                 z.svi_overall, z.pct_no_vehicle, z.pct_age_65_plus,
                 z.pct_limited_english, z.pct_poverty, z.pct_minority,
                 z.transit_coverage,
-                COALESCE(r.report_count, 0)      AS report_count,
+                COALESCE(r.report_count, 0)          AS report_count,
+                COALESCE(r.recent_report_count, 0)   AS recent_report_count,
+                COALESCE(r.window_hours, 0)          AS window_hours,
                 r.latest_report_at,
                 w.temperature_f, w.relative_humidity,
                 f.feed_age_seconds, f.alerts
@@ -60,19 +63,34 @@ def load_evidence(
             ) f ON TRUE
             """
         ).fetchall()
+        # Propensity is fitted from the whole city at once: a tract's reporting
+        # level only means anything relative to comparable tracts.
+        category_counts = con.execute(
+            "SELECT geoid, category, report_count FROM reports_by_zone_category"
+        ).fetchall()
+        populations = dict(con.execute(
+            "SELECT geoid, COALESCE(population, 0) FROM zones"
+        ).fetchall())
     finally:
         con.close()
 
-    return [_to_evidence(row, now, feed_health) for row in rows]
+    propensity_model = fit_propensity(category_counts, populations)
+
+    return [
+        _to_evidence(row, now, feed_health, propensity_model.get(row[0]))
+        for row in rows
+    ]
 
 
 def _to_evidence(
     row: tuple,
     now: datetime,
     feed_health: dict[str, FeedHealth],
+    propensity: Propensity | None,
 ) -> ZoneEvidence:
     (geoid, neighbourhood, borough, population, svi, no_veh, age65,
-     limeng, poverty, minority, transit_coverage, report_count, latest_report_at,
+     limeng, poverty, minority, transit_coverage, report_count,
+     recent_report_count, window_hours, latest_report_at,
      temp_f, humidity, feed_age, alerts) = row
 
     zone = Zone(
@@ -92,12 +110,15 @@ def _to_evidence(
     return ZoneEvidence(
         zone=zone,
         report_count=int(report_count or 0),
+        recent_report_count=int(recent_report_count or 0),
+        report_window_hours=float(window_hours or 0),
         latest_report_at=latest,
         heat_index_f=heat_index_f(temp_f, humidity),
         transit_feed_age_seconds=feed_age,
         transit_alerts=int(alerts or 0),
         source_reliability=_reliability(zone, latest, temp_f, feed_age, now,
-                                        feed_health, transit_coverage),
+                                        feed_health, transit_coverage, propensity),
+        propensity=propensity,
         observed_at=now,
     )
 
@@ -110,6 +131,7 @@ def _reliability(
     now: datetime,
     feed_health: dict[str, FeedHealth],
     transit_coverage: float | None,
+    propensity: Propensity | None,
 ) -> dict[str, Reliability]:
     """Per-source reliability for one zone.
 
@@ -127,7 +149,12 @@ def _reliability(
                 (now - latest_report_at).total_seconds() if latest_report_at else None,
                 REPORT_FRESHNESS_HORIZON.total_seconds(),
             ),
-            coverage=1.0 if latest_report_at else 0.0,
+            # Coverage is the tract's evidential weight, not merely whether
+            # any report exists. Silence from a tract that rarely calls 311 is
+            # close to no information, and must not be banked as reassurance.
+            coverage=(propensity.evidential_weight
+                      if propensity and propensity.is_estimated
+                      else (0.5 if latest_report_at else 0.0)),
             liveness=liveness_of("311"),
         ),
         "nws": Reliability(

@@ -8,6 +8,8 @@ placeholder for a result.
 from __future__ import annotations
 
 from .. import config
+from ..claims.extract import extract as extract_claims
+from ..claims.graph import build as build_contradiction_graph
 from ..decision import decide
 from ..types import Sufficiency, ZoneAssessment
 from .evidence import ZoneEvidence
@@ -26,8 +28,11 @@ VULNERABILITY_WEIGHT = 0.4
 
 def assess(evidence: ZoneEvidence) -> ZoneAssessment:
     """Produce a risk estimate and a sufficiency score, then apply the 2x2."""
+    graph = build_contradiction_graph(
+        extract_claims(evidence, evidence.propensity)
+    )
     risk = _risk(evidence)
-    sufficiency = _sufficiency(evidence)
+    sufficiency = _sufficiency(evidence, graph.agreement)
     state = decide(risk, sufficiency.score)
 
     return ZoneAssessment(
@@ -39,7 +44,7 @@ def assess(evidence: ZoneEvidence) -> ZoneAssessment:
         contributing={
             name: rel.score for name, rel in evidence.source_reliability.items()
         },
-        contradictions=(),
+        contradictions=graph.describe(),
     )
 
 
@@ -80,10 +85,10 @@ def _exposure(evidence: ZoneEvidence) -> float:
     return _clamp(sum(known) / len(known))
 
 
-def _sufficiency(evidence: ZoneEvidence) -> Sufficiency:
+def _sufficiency(evidence: ZoneEvidence, agreement: float) -> Sufficiency:
     """Only terms this build actually measures are populated.
 
-    entropy (day 4) and contradiction (day 3) stay None rather than 1.0. Set to
+    entropy (day 4) stays None rather than 1.0. Set to
     1.0 they would contribute a fixed 0.55 of confidence out of nowhere -- more
     than the decision threshold -- so no amount of genuinely missing evidence
     could ever push a zone into UNKNOWN. A placeholder that reads as evidence
@@ -94,7 +99,7 @@ def _sufficiency(evidence: ZoneEvidence) -> Sufficiency:
     return Sufficiency(
         entropy=None,        # day 4
         coverage=evidence.evidence_coverage,
-        contradiction=None,  # day 3
+        contradiction=agreement,
         staleness=_staleness_term(evidence),
         ceiling=config.CRITICAL_GAP_CEILING if missing_critical else 1.0,
     )
