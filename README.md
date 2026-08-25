@@ -501,6 +501,22 @@ larger in the most vulnerable fifth of the city than the least.
 > in the Gulf of Guinea. The system is classified per row by magnitude rather
 > than assumed per dataset.
 
+## Air quality
+
+NYC Community Air Survey, by community district, crosswalked to tracts through
+`cdta2020`. Ozone earns its place in a heat system because ozone formation is
+temperature-driven: hot days are bad-air days, and the same residents absorb both.
+
+**It is annual data, and that governs how it may be used.** A 2024 mean is not
+evidence about this afternoon. It shapes the *prior* on how often a hot day here
+is a genuine emergency, and never the likelihood of any observation — a test
+asserts the words `ozone`, `pm25` and `air_burden` do not appear anywhere in the
+likelihood layer.
+
+Another honest negative: across NYC, ozone is essentially **flat by
+vulnerability quintile** (32.9 to 33.5 ppb), as is PM2.5. It is a compound
+hazard, not an equity signal, and it is used as one.
+
 ## Demoing it
 
 `docs/DEMO.md` — a ninety-second runbook, rehearsed against the production
