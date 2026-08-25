@@ -30,9 +30,17 @@ RECENT_WINDOW_HOURS = 48
 # Standard transit-access buffer: the distance people will walk to a station.
 TRANSIT_WALK_BUFFER_METRES = 800
 
+# How far someone will walk to heat relief in dangerous heat. Shorter than the
+# transit buffer on purpose: the people who most need a misting station are the
+# ones least able to walk half a mile to reach it.
+COOLING_WALK_BUFFER_METRES = 500
+
 # UTM zone 18N covers New York. Buffering in degrees would be anisotropic --
 # 800 "metres" of longitude is a quarter shorter than 800 of latitude here.
 PROJECTED_CRS = "EPSG:32618"
+# NY State Plane Long Island (feet) -- one of the two systems the cooling
+# datasets arrive in, despite sharing column names with the other.
+PROJECTED_STATE_PLANE = "EPSG:2263"
 GEOGRAPHIC_CRS = "EPSG:4326"
 
 
@@ -58,6 +66,8 @@ def build_store(raw_dir: Path, db_path: Path) -> dict[str, int]:
         counts["reports_by_zone"] = _aggregate_reports(con)
         counts["reports_by_category"] = _aggregate_reports_by_category(con)
         counts["stations"] = _load_stations(con, raw_dir / "gtfs_stations.json")
+        counts["cooling_sites"] = _load_cooling(con, raw_dir / "cooling_sites.json")
+        counts["cooling_access"] = _compute_cooling_access(con)
         counts["transit_coverage"] = _compute_transit_coverage(con)
         counts["weather"] = _load_weather(con, raw_dir / "nws_forecast.json")
         counts["feeds"] = _load_feed_health(con, raw_dir / "gtfs_rt_summary.json")
@@ -231,6 +241,85 @@ def _load_stations(con: duckdb.DuckDBPyConnection, path: Path) -> int:
         [str(path)],
     )
     return _count(con, "transit_stations")
+
+
+def _load_cooling(con: duckdb.DuckDBPyConnection, path: Path) -> int:
+    """Heat-relief sites, normalised to lon/lat.
+
+    The two source datasets share column names and use different coordinate
+    systems, so each row carries the system it was read in and is transformed
+    accordingly. `always_xy` for the same reason as everywhere else: without it
+    EPSG:4326's declared axis order silently swaps the pair.
+    """
+    path = _resolve(path, "cooling_sites")
+    con.execute(
+        f"""
+        CREATE OR REPLACE TABLE cooling_sites AS
+        SELECT
+            kind, name, status,
+            CAST(is_working AS BOOLEAN) AS is_working,
+            CASE
+                WHEN crs = '{PROJECTED_STATE_PLANE}'
+                THEN ST_Transform(ST_Point(x, y),
+                                  '{PROJECTED_STATE_PLANE}', '{GEOGRAPHIC_CRS}', true)
+                ELSE ST_Point(x, y)
+            END AS geom
+        FROM read_json_auto(?)
+        """,
+        [str(path)],
+    )
+    return _count(con, "cooling_sites")
+
+
+def _compute_cooling_access(con: duckdb.DuckDBPyConnection) -> int:
+    """Share of each tract within walking distance of heat relief.
+
+    Computed twice: once over every listed site, once over only the working
+    ones. The difference is the relief a city believes it has and does not --
+    and it is the same kind of gap this whole system exists to surface, sitting
+    inside the mitigation we would otherwise recommend.
+    """
+    con.execute(
+        f"""
+        CREATE OR REPLACE TABLE cooling_access AS
+        WITH listed AS (
+            SELECT ST_Union_Agg(ST_Buffer(
+                ST_Transform(geom, '{GEOGRAPHIC_CRS}', '{PROJECTED_CRS}', true),
+                {COOLING_WALK_BUFFER_METRES})) AS area
+            FROM cooling_sites
+        ),
+        working AS (
+            SELECT ST_Union_Agg(ST_Buffer(
+                ST_Transform(geom, '{GEOGRAPHIC_CRS}', '{PROJECTED_CRS}', true),
+                {COOLING_WALK_BUFFER_METRES})) AS area
+            FROM cooling_sites WHERE is_working
+        ),
+        projected AS (
+            SELECT geoid,
+                   ST_Transform(geom, '{GEOGRAPHIC_CRS}', '{PROJECTED_CRS}', true) AS geom
+            FROM zones
+        )
+        SELECT
+            p.geoid,
+            LEAST(1.0, GREATEST(0.0, ST_Area(ST_Intersection(p.geom, l.area))
+                                     / NULLIF(ST_Area(p.geom), 0))) AS cooling_listed,
+            LEAST(1.0, GREATEST(0.0, ST_Area(ST_Intersection(p.geom, w.area))
+                                     / NULLIF(ST_Area(p.geom), 0))) AS cooling_working
+        FROM projected p CROSS JOIN listed l CROSS JOIN working w
+        """
+    )
+    con.execute(
+        """
+        ALTER TABLE zones ADD COLUMN IF NOT EXISTS cooling_listed DOUBLE;
+        ALTER TABLE zones ADD COLUMN IF NOT EXISTS cooling_working DOUBLE;
+        UPDATE zones SET
+            cooling_listed = (SELECT c.cooling_listed FROM cooling_access c
+                              WHERE c.geoid = zones.geoid),
+            cooling_working = (SELECT c.cooling_working FROM cooling_access c
+                               WHERE c.geoid = zones.geoid);
+        """
+    )
+    return _count(con, "cooling_access")
 
 
 def _compute_transit_coverage(con: duckdb.DuckDBPyConnection) -> int:
