@@ -15,6 +15,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from ..eval import baseline
+from ..explain.cache import ExplanationCache
+from ..explain.packet import build as build_packet
 from ..inference import engine, pipeline
 from ..reliability.feeds import FeedHealth, assess_feeds
 from . import scenarios as scenario_api
@@ -39,6 +41,7 @@ class EngineState:
     queue: list[dict]
     evidence: list = field(default_factory=list)
     playback_cache: dict = field(default_factory=dict)
+    explanations: ExplanationCache = field(default_factory=ExplanationCache)
 
 
 state = EngineState(features=[], detail={}, summary={}, queue=[])
@@ -235,6 +238,7 @@ def _detail(item, ours: ZoneAssessment, theirs: ZoneAssessment) -> dict:
             }
             for name, rel in item.source_reliability.items()
         },
+        "explanation": _explanation(item, ours),
         "reporting": _reporting_detail(item),
         "contradictions": list(ours.contradictions),
         "vulnerability": {
@@ -243,6 +247,22 @@ def _detail(item, ours: ZoneAssessment, theirs: ZoneAssessment) -> dict:
             "pct_age_65_plus": item.zone.pct_age_65_plus,
             "multiplier": round(item.zone.vulnerability_multiplier, 3),
         },
+    }
+
+
+def _explanation(item, assessment) -> dict:
+    """Prose account of the evidence, generated or deterministic.
+
+    Built from a packet that deliberately excludes the verdict: the language
+    layer describes what the evidence is, never what it means.
+    """
+    packet = build_packet(item, assessment)
+    result = state.explanations.get(packet)
+    return {
+        "text": result.text,
+        "source": result.source,
+        "note": result.note,
+        "packet_fingerprint": packet.fingerprint,
     }
 
 
