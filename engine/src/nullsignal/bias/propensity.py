@@ -118,10 +118,26 @@ def fit(
 ) -> PropensityModel:
     """Fit the two-way decomposition.
 
-    `counts` is (geoid, category, report_count). Cells are precision-weighted
-    by their count, because the log of a small count is a noisy quantity and
-    should not sway a tract's estimate as much as a large one.
+    `counts` is (geoid, category, report_count).
     """
+    observed, categories = _usable_cells(counts, populations)
+    log_rates = _log_rates(observed, categories, populations)
+    category_means = {
+        category: _mean([rates[category] for rates in log_rates.values()])
+        for category in categories
+    }
+
+    raw = {
+        geoid: _tract_estimate(rates, observed[geoid], categories, category_means)
+        for geoid, rates in log_rates.items()
+    }
+    return _recentred(raw, category_means, len(categories))
+
+
+def _usable_cells(
+    counts: list[tuple[str, str, int]],
+    populations: dict[str, int],
+) -> tuple[dict[str, dict[str, int]], list[str]]:
     observed: dict[str, dict[str, int]] = {}
     categories: set[str] = set()
     for geoid, category, count in counts:
@@ -129,62 +145,76 @@ def fit(
             continue
         observed.setdefault(geoid, {})[category] = count
         categories.add(category)
+    return observed, sorted(categories)
 
-    ordered_categories = sorted(categories)
-    log_rates = {
+
+def _log_rates(
+    observed: dict[str, dict[str, int]],
+    categories: list[str],
+    populations: dict[str, int],
+) -> dict[str, dict[str, float]]:
+    return {
         geoid: {
             category: math.log((cells.get(category, 0) + ZERO_CORRECTION)
                                / populations[geoid])
-            for category in ordered_categories
+            for category in categories
         }
         for geoid, cells in observed.items()
     }
 
-    category_means = {
-        category: _mean([rates[category] for rates in log_rates.values()])
-        for category in ordered_categories
-    }
 
-    raw: dict[str, tuple[float, float, int, int]] = {}
-    for geoid, rates in log_rates.items():
-        cells = observed[geoid]
-        weights, deviations = [], []
-        for category in ordered_categories:
-            weight = cells.get(category, 0) + ZERO_CORRECTION
-            weights.append(weight)
-            deviations.append(rates[category] - category_means[category])
+def _tract_estimate(
+    rates: dict[str, float],
+    cells: dict[str, int],
+    categories: list[str],
+    category_means: dict[str, float],
+) -> tuple[float, float, int, int]:
+    """One tract's level, precision-weighted by its counts.
 
-        beta = _weighted_mean(deviations, weights)
-        spread = _weighted_std(deviations, weights, beta)
-        present = sum(1 for c in ordered_categories if cells.get(c, 0) > 0)
-        standard_error = spread / math.sqrt(max(present, 1))
+    The log of a small count is a noisy quantity and should not sway the
+    estimate as much as a large one.
+    """
+    weights, deviations = [], []
+    for category in categories:
+        weights.append(cells.get(category, 0) + ZERO_CORRECTION)
+        deviations.append(rates[category] - category_means[category])
 
-        raw[geoid] = (beta, standard_error, present, sum(cells.values()))
+    beta = _weighted_mean(deviations, weights)
+    spread = _weighted_std(deviations, weights, beta)
+    present = sum(1 for category in categories if cells.get(category, 0) > 0)
+    return beta, spread / math.sqrt(max(present, 1)), present, sum(cells.values())
 
-    # Recentre so the typical tract sits at exactly 1.0.
-    #
-    # Without this the index is anchored to the mean of the log rates, which
-    # zero-report cells drag downwards -- leaving almost every tract "above
-    # average" and the scale meaningless. The claim this number makes is
-    # relative ("half as much as a comparable tract"), so the reference point
-    # has to be the typical tract, by construction rather than by luck.
-    usable = [
-        value[0] for geoid, value in raw.items()
-        if value[2] >= MIN_CATEGORIES
-    ]
-    centre = _median(usable)
 
-    by_geoid = {
-        geoid: Propensity(
-            geoid=geoid,
-            log_index=beta - centre,
-            standard_error=standard_error,
-            category_count=present,
-            total_reports=total,
-        )
-        for geoid, (beta, standard_error, present, total) in raw.items()
-    }
-    return PropensityModel(by_geoid, category_means, len(ordered_categories))
+def _recentred(
+    raw: dict[str, tuple[float, float, int, int]],
+    category_means: dict[str, float],
+    category_count: int,
+) -> PropensityModel:
+    """Shift the scale so the typical tract sits at exactly 1.0.
+
+    Without this the index is anchored to the mean of the log rates, which
+    zero-report cells drag downwards -- leaving almost every tract "above
+    average" and the scale meaningless. The claim this number makes is relative
+    ("half as much as a comparable tract"), so the reference point has to be
+    the typical tract, by construction rather than by luck.
+    """
+    centre = _median([value[0] for value in raw.values()
+                      if value[2] >= MIN_CATEGORIES])
+
+    return PropensityModel(
+        by_geoid={
+            geoid: Propensity(
+                geoid=geoid,
+                log_index=beta - centre,
+                standard_error=standard_error,
+                category_count=present,
+                total_reports=total,
+            )
+            for geoid, (beta, standard_error, present, total) in raw.items()
+        },
+        category_means=category_means,
+        category_count=category_count,
+    )
 
 
 def _median(values: list[float]) -> float:
