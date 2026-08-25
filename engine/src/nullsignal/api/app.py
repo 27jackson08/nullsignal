@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -17,11 +17,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from ..eval import baseline
 from ..inference import engine, pipeline
 from ..reliability.feeds import FeedHealth, assess_feeds
+from . import scenarios as scenario_api
 from ..sources.snapshot import load_manifest
 from ..store import DB_FILENAME, connect
 from ..types import ZoneAssessment
 
-DATA_DIR = Path(__file__).resolve().parents[4] / "data"
+REPO_ROOT = Path(__file__).resolve().parents[4]
+DATA_DIR = REPO_ROOT / "data"
+SCENARIOS_DIR = REPO_ROOT / "scenarios"
 DB_PATH = DATA_DIR / DB_FILENAME
 RAW_DIR = DATA_DIR / "raw"
 
@@ -34,6 +37,8 @@ class EngineState:
     detail: dict[str, dict]
     summary: dict
     queue: list[dict]
+    evidence: list = field(default_factory=list)
+    playback_cache: dict = field(default_factory=dict)
 
 
 state = EngineState(features=[], detail={}, summary={}, queue=[])
@@ -107,6 +112,12 @@ def _rebuild() -> None:
         detail[geoid] = _detail(item, ours, theirs)
         queue.append({
             "geoid": geoid,
+            # Per-capita harm times the people it lands on. Ranking on the
+            # per-capita figure alone put empty parks and a cemetery at the top
+            # of the operator's queue, because a tract with nobody in it can be
+            # just as unresolved as a dense one and the arithmetic could not
+            # tell them apart.
+            "residents_at_stake": round(ours.unresolved_harm * item.zone.population, 2),
             "name": item.zone.name,
             "borough": item.zone.borough,
             "population": item.zone.population,
@@ -123,11 +134,14 @@ def _rebuild() -> None:
 
     state.features = features
     state.detail = detail
-    # Ranked by unresolved harm: what we believe is at stake, weighted by how
-    # unsure we are. Monotone in both vulnerability and doubt, which is what
-    # makes it usable as a queue -- see voi/evpi.unresolved_harm.
-    queue.sort(key=lambda row: -row["unresolved_harm"])
+    # Ranked by expected residents at stake: unresolved harm per capita times
+    # the population it falls on. Unresolved harm alone is monotone in
+    # vulnerability and doubt (see voi/evpi.unresolved_harm) but says nothing
+    # about how many people are standing there.
+    queue.sort(key=lambda row: -row["residents_at_stake"])
     state.queue = queue
+    state.evidence = evidence
+    state.playback_cache = {}
 
     state.summary = {
         "zone_count": len(evidence),
@@ -284,6 +298,28 @@ def _manifest_summary() -> dict:
 @app.get("/api/summary")
 def get_summary() -> dict:
     return state.summary
+
+
+@app.get("/api/scenarios")
+def get_scenarios() -> dict:
+    return {"scenarios": scenario_api.list_scenarios(SCENARIOS_DIR)}
+
+
+@app.get("/api/scenarios/{name}")
+def get_scenario(name: str) -> dict:
+    """Run a scenario and return it as a scrubbable timeline.
+
+    Cached after the first request: a run takes seconds, and the client needs
+    to seek through it freely once it has it.
+    """
+    if name in state.playback_cache:
+        return state.playback_cache[name]
+    try:
+        payload = scenario_api.playback(SCENARIOS_DIR, name, state.evidence)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"no scenario named {name!r}") from None
+    state.playback_cache[name] = payload
+    return payload
 
 
 @app.get("/api/queue")
