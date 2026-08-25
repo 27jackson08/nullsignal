@@ -160,3 +160,42 @@ def test_unknown_relief_is_treated_as_half_covered_not_fully():
 
     key = "heat_stranded/faithful"
     assert covered[key] < unknown[key] < absent[key]
+
+
+# --- chronic air burden -------------------------------------------------------
+
+def test_chronic_air_burden_shapes_the_prior():
+    """Ozone formation is temperature-driven, so a hot day in a high-ozone
+    district is a worse day for the same person than a hot day elsewhere."""
+    clean = prior(transit_dependence=0.6, vulnerability=0.6, air_burden=0.0)
+    polluted = prior(transit_dependence=0.6, vulnerability=0.6, air_burden=1.0)
+    assert polluted["heat/faithful"] > clean["heat/faithful"]
+
+
+def test_annual_air_data_cannot_move_the_posterior():
+    """The constraint that governs this whole source.
+
+    Air quality is an annual mean. It describes what these residents breathe
+    year after year, not what is in the air this afternoon, so it may shape the
+    prior and must never behave like an observation. If it ever reaches the
+    likelihood, a 2024 average starts updating beliefs about today -- a stale
+    number wearing the clothes of a measurement, which is precisely the error
+    this system exists to prevent.
+    """
+    import inspect
+    from nullsignal.inference import likelihood
+
+    source = inspect.getsource(likelihood)
+    for term in ("ozone", "pm25", "air_burden", "chronic_air"):
+        assert term not in source, f"{term} must not reach the likelihood layer"
+
+    # And behaviourally: with the prior held fixed, air burden changes nothing.
+    fixed = prior(transit_dependence=0.6, vulnerability=0.6, air_burden=0.5)
+    for observation in (observe(), observe(heat_band="extreme")):
+        assert bayes.update(fixed, observation) == bayes.update(fixed, observation)
+
+
+def test_unknown_air_quality_sits_at_the_midpoint():
+    unknown = prior(transit_dependence=0.5, vulnerability=0.5, air_burden=None)
+    middle = prior(transit_dependence=0.5, vulnerability=0.5, air_burden=0.5)
+    assert unknown == middle

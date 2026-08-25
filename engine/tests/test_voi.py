@@ -122,11 +122,19 @@ def test_a_check_that_settles_whether_trains_run_has_value_in_a_blind_heatwave()
     be trusted -- when what a call to transit control actually settles is
     whether trains are moving, which discriminates the harmful world directly.
     """
-    ranked = {r.key: r for r in evpi.rank(posterior_for(), harm_scale=2.8)}
+    ordered = evpi.rank(posterior_for(), harm_scale=2.8)
+    ranked = {r.key: r for r in ordered}
+
     assert ranked["call_transit_ops"].value > 0
-    assert ranked["call_transit_ops"].value_per_cost == max(
-        r.value_per_cost for r in evpi.rank(posterior_for(), harm_scale=2.8)
-    )
+    assert ranked["alternate_transit_feed"].value > 0
+
+    # The top recommendation must be a check that settles whether trains are
+    # running. *Which* of the two leads is not asserted: they answer the same
+    # question at different cost and accuracy, so the cost-normalised ranking
+    # between them legitimately flips with calibration. Their ordering by raw
+    # value is the durable claim, asserted in the test below.
+    from nullsignal.voi.actions import Resolves
+    assert ordered[0].action.resolves is Resolves.MOBILITY
 
 
 def test_a_less_reliable_check_of_the_same_question_is_worth_less():
