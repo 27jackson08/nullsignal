@@ -472,6 +472,35 @@ or stays true.
 HSTS is emitted **only over TLS**. Sending it over plain HTTP is ignored at
 best, and harmful if the config reaches a host that cannot serve HTTPS.
 
+## Heat relief
+
+The harm mechanism in the scenario is "no way to reach a cooling centre", so the
+cooling network is modelled from NYC Parks' Cool It! data — 1,026 misting
+stations and spray showers.
+
+Coverage is computed **twice**: once over every listed site, once over only the
+ones that work. `status` marks 57 broken, 28 under construction and 10 never
+activated, so a system counting listed sites overstates available relief — and
+does so invisibly, because a broken misting station looks like a working one in
+any dataset that does not read the field.
+
+| | |
+| --- | --- |
+| Tracts with no working relief within 500m | **269** |
+| Tracts listed as covered that are not | **36** (114,526 residents) |
+| Overstatement, least vulnerable quintile | 0.010 |
+| Overstatement, most vulnerable quintile | **0.037** |
+
+Broken relief is concentrated where it matters most: the overstatement is 3.7x
+larger in the most vulnerable fifth of the city than the least.
+
+> One trap worth recording: the two source datasets come from the same agency
+> and use the same column names, `x` and `y`, in **different coordinate
+> systems** — cooling sites in lon/lat, spray showers in NY State Plane feet.
+> Nothing in either schema says so. Reading both the same way places 755 sites
+> in the Gulf of Guinea. The system is classified per row by magnitude rather
+> than assumed per dataset.
+
 ## Demoing it
 
 `docs/DEMO.md` — a ninety-second runbook, rehearsed against the production
