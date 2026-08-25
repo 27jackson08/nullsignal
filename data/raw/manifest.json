@@ -1,5 +1,5 @@
 {
-  "snapshot_at": "2026-08-24T12:39:56.890676+00:00",
+  "snapshot_at": "2026-08-25T14:20:06.248339+00:00",
   "sources": [
     {
       "source_id": "311",
@@ -9,6 +9,15 @@
       "byte_count": 47096125,
       "path": "311_requests.json",
       "note": "200000 geocoded requests since 2026-06-25T10:39:20"
+    },
+    {
+      "source_id": "cooling_sites",
+      "fetched_at": "2026-08-25T14:20:06.247095+00:00",
+      "status_code": 200,
+      "content_hash": "bc97c24b3346ffe3",
+      "byte_count": 172501,
+      "path": "cooling_sites.json",
+      "note": "1026 sites, 926 working, 757 in state-plane coordinates"
     },
     {
       "source_id": "gtfs_static",
