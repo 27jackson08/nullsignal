@@ -128,9 +128,7 @@ def test_vulnerability_multiplier_is_monotonic():
 
 # --- 6. The explanation layer cannot invent numbers ---------------------------
 
-@pytest.mark.skip(reason="unlocks day 7: LLM explanation layer")
-def test_llm_emits_no_unsupported_numbers():
-    """Every numeric token in generated prose must trace to the evidence packet."""
+# Landed on day 7. Lives in test_explanation.py::test_llm_emits_no_unsupported_numbers
 
 
 # --- The 2x2 itself -----------------------------------------------------------
