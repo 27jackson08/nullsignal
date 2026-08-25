@@ -257,6 +257,14 @@ def _detail(item, ours: ZoneAssessment, theirs: ZoneAssessment) -> dict:
         "explanation": _explanation(item, ours),
         "reporting": _reporting_detail(item),
         "contradictions": list(ours.contradictions),
+        "heat_relief": {
+            "reachable": (round(item.zone.cooling_working, 3)
+                          if item.zone.cooling_working is not None else None),
+            "listed": (round(item.zone.cooling_listed, 3)
+                       if item.zone.cooling_listed is not None else None),
+            "overstated": (round(item.zone.unreachable_relief, 3)
+                           if item.zone.unreachable_relief is not None else None),
+        },
         "vulnerability": {
             "svi_overall": item.zone.svi_overall,
             "pct_no_vehicle": item.zone.pct_no_vehicle,

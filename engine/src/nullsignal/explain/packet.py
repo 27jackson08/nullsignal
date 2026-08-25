@@ -118,10 +118,28 @@ def build(evidence: ZoneEvidence, assessment: ZoneAssessment) -> EvidencePacket:
                 f"{label} is answering but its content has stopped changing"
             )
 
-    gaps = tuple(
+    gaps = [
         f"{SOURCE_LABELS.get(name, name)} is unavailable for this tract"
         for name in evidence.missing_critical_sources
-    )
+    ]
+
+    relief = evidence.zone.cooling_working
+    if relief is not None:
+        facts["heat_relief_reachable"] = round(relief, 2)
+        unreachable = evidence.zone.unreachable_relief or 0.0
+        if unreachable > 0.05:
+            facts["heat_relief_listed_but_broken"] = round(unreachable, 2)
+            # A gap rather than an observation: the city's own record asserts
+            # relief here that is not working, so any plan that assumes people
+            # can cool down nearby is resting on something untrue.
+            gaps.append(
+                "part of this tract's listed heat relief is broken or "
+                "unactivated, so the record overstates what people can reach"
+            )
+        elif relief < 0.1:
+            observations.append(
+                "no working heat relief lies within walking distance"
+            )
 
     check = assessment.recommended_checks[0] if assessment.recommended_checks else None
     return EvidencePacket(
@@ -130,7 +148,7 @@ def build(evidence: ZoneEvidence, assessment: ZoneAssessment) -> EvidencePacket:
         population=evidence.zone.population,
         facts=facts,
         observations=tuple(observations),
-        gaps=gaps,
+        gaps=tuple(gaps),
         conflicts=assessment.contradictions,
         next_check=check.label if check else "",
         next_check_minutes=check.latency_minutes if check else None,
