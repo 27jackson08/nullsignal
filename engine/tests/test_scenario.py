@@ -173,7 +173,7 @@ def test_population_counts_tracts_not_tract_hours():
 def test_an_engine_that_alarms_constantly_is_flagged_as_such():
     """Zero false reassurance is trivial to buy by never calling anything safe."""
     from nullsignal.eval.scoreboard import EngineScore
-    stopped_clock = EngineScore("test", 0.0, 0, 0.85, 10, 10, 0.0, 0.0)
+    stopped_clock = EngineScore("test", 0.0, 0, 0.85, 0.0, 10, 10, 0.0, 0.0)
     assert stopped_clock.alarms_indiscriminately
 
 
@@ -251,3 +251,30 @@ def test_the_shipped_scenarios_all_parse():
         loaded = scenario_module.load(path)
         assert loaded.name and loaded.tick_count > 1, path.name
         assert loaded.description.strip(), f"{path.name} needs a description"
+
+
+def test_declining_to_certify_is_not_counted_as_crying_wolf():
+    """Two different failures, kept in two different columns.
+
+    Saying "we cannot confirm this is safe" asserts nothing about danger. It is
+    the behaviour this system exists to produce, and folding it into the
+    false-alarm rate made honesty look like noise -- the canonical scenario
+    read 33% "false alarms" that were almost entirely a still-frozen transit
+    feed after the heat eased, where declining to certify was exactly right.
+    """
+    board = scoreboard.score(simrun.run(SILENT_FAILURE, synthetic_city()))
+
+    assert board.nullsignal.false_alarm_rate == 0.0, "never claims danger falsely"
+    assert board.nullsignal.unresolved_rate > 0, "does decline to certify"
+
+    # The baseline has the opposite shape: it can cry wolf, and it structurally
+    # cannot decline to certify anything.
+    assert board.baseline.unresolved_rate == 0.0
+
+
+def test_the_two_costs_are_reported_separately():
+    from nullsignal.eval.scoreboard import EngineScore
+
+    honest = EngineScore("honest", 0.0, 0, 0.0, 0.9, 10, 10, 0.0, 2.0)
+    assert not honest.alarms_indiscriminately, \
+        "declining to certify must not read as indiscriminate alarming"
