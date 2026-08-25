@@ -472,6 +472,11 @@ or stays true.
 HSTS is emitted **only over TLS**. Sending it over plain HTTP is ignored at
 best, and harmful if the config reaches a host that cannot serve HTTPS.
 
+## Demoing it
+
+`docs/DEMO.md` — a ninety-second runbook, rehearsed against the production
+build, including the questions it draws and what to say when it loses.
+
 ## Status
 
 Complete: 7 of 7 days. See `docs/PLAN.md`.
