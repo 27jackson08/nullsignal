@@ -433,7 +433,7 @@ test_llm_emits_no_unsupported_numbers       every figure traces to the packet
 ```
 
 ```
-make test      # 145 tests
+make test      # 151 tests
 make coverage  # 81% line coverage
 make check     # tests + typecheck + production build
 make demo      # engine on :8000, map on :5173
@@ -454,6 +454,23 @@ rather than inherited:
   map ground; text runs 5.1–15:1. The faint token was 3.4:1 and failed AA for
   the size it is used at; it is now 5.7:1.
 - Motion is disabled under `prefers-reduced-motion`, and focus is always visible.
+
+Verified at 320, 375, 768, 1024, 1440 and 1920 by rendering the app in a
+same-origin iframe at each width — media queries respond to an iframe as they
+do to a viewport. A static CSS audit had missed a 67px overflow at 320px, where
+the header could not fit the brand alongside four view buttons and stretched
+the whole shell.
+
+## Security headers
+
+Every response carries `X-Content-Type-Options`, `X-Frame-Options`,
+`Referrer-Policy`, `Permissions-Policy`, a `default-src 'none'` CSP, and
+`Cache-Control: no-store` — this service answers with JSON and nothing else,
+and each response names a neighbourhood at a moment, neither of which is public
+or stays true.
+
+HSTS is emitted **only over TLS**. Sending it over plain HTTP is ignored at
+best, and harmful if the config reaches a host that cannot serve HTTPS.
 
 ## Status
 
