@@ -48,6 +48,12 @@ export interface ZoneDetail {
     total_reports?: number;
   };
   contradictions: string[];
+  explanation: {
+    text: string;
+    source: "generated" | "template";
+    note: string;
+    packet_fingerprint: string;
+  };
   unseen_danger: number;
   unresolved_harm: number;
   decision: string;

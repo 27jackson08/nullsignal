@@ -180,3 +180,22 @@
 .check-meta dd { margin: 0; font-size: .84rem; font-weight: 600; }
 
 .block-note.unseen { color: var(--state-suspected); margin-top: var(--space-2); }
+
+.explanation {
+  padding: var(--space-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--rule);
+}
+.explanation p:first-child {
+  margin: 0;
+  font-size: .92rem;
+  line-height: 1.6;
+}
+.explanation-source {
+  margin: var(--space-3) 0 0;
+  font-family: var(--font-mono);
+  font-size: .62rem;
+  line-height: 1.55;
+  letter-spacing: .03em;
+  color: var(--ink-faint);
+}

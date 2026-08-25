@@ -119,6 +119,16 @@ export function EvidencePanel({ geoid, onSelect }: EvidencePanelProps) {
         </div>
       )}
 
+      <div className="explanation">
+        <p>{detail.explanation.text}</p>
+        <p className="explanation-source">
+          {detail.explanation.source === "generated"
+            ? "Written by a language model from the evidence packet; every figure verified against it."
+            : "Written deterministically from the evidence packet."}
+          {detail.explanation.note && ` (${detail.explanation.note})`}
+        </p>
+      </div>
+
       {contradictions.length > 0 && (
         <div className="contradictions">
           <p className="label">Sources disagree</p>
