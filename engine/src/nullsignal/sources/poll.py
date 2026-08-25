@@ -119,7 +119,11 @@ def _poll_weather(client: httpx.Client) -> list[Observation]:
                                 http_status=point.status_code, content_hash="",
                                 byte_count=0, note="points lookup failed")]
         response = client.get(point.json()["properties"]["forecastHourly"], headers=headers)
-    except (httpx.HTTPError, KeyError, ValueError) as exc:
+    # TypeError included deliberately: an upstream returning an unexpected JSON
+    # shape subscripts None, and without it one malformed weather response
+    # aborted the whole poll round -- losing that round's transit observations
+    # too, which is far worse than a single missing reading.
+    except (httpx.HTTPError, KeyError, TypeError, ValueError) as exc:
         return [Observation(source_id=source_id, polled_at=now_iso(), http_status=0,
                             content_hash="", byte_count=0,
                             note=f"request failed: {exc}"[:120])]
@@ -130,7 +134,9 @@ def _poll_weather(client: httpx.Client) -> list[Observation]:
         properties = response.json()["properties"]
         updated = properties.get("updated") or properties.get("updateTime")
         temperature = float(properties["periods"][0]["temperature"])
-    except (ValueError, KeyError, IndexError, TypeError):
+    except (ValueError, KeyError, IndexError, TypeError, AttributeError):
+        # An unreadable forecast is still an observation: we polled, it
+        # answered, and what came back was not usable.
         pass
 
     return [Observation(
