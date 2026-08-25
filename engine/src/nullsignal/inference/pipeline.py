@@ -42,6 +42,7 @@ def load_evidence(
                 z.pct_limited_english, z.pct_poverty, z.pct_minority,
                 z.transit_coverage,
                 z.cooling_working, z.cooling_listed,
+                z.ozone_ppb, z.pm25_ugm3,
                 COALESCE(r.report_count, 0)          AS report_count,
                 COALESCE(r.recent_report_count, 0)   AS recent_report_count,
                 COALESCE(r.window_hours, 0)          AS window_hours,
@@ -92,6 +93,7 @@ def _to_evidence(
 ) -> ZoneEvidence:
     (geoid, neighbourhood, borough, population, svi, no_veh, age65,
      limeng, poverty, minority, transit_coverage, cooling_working, cooling_listed,
+     ozone_ppb, pm25_ugm3,
      report_count,
      recent_report_count, window_hours, latest_report_at,
      temp_f, humidity, feed_age, alerts) = row
@@ -109,6 +111,8 @@ def _to_evidence(
         pct_minority=minority,
         cooling_working=cooling_working,
         cooling_listed=cooling_listed,
+        ozone_ppb=ozone_ppb,
+        pm25_ugm3=pm25_ugm3,
     )
 
     latest = _as_utc(latest_report_at)

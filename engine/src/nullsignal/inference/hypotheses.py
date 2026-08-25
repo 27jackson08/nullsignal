@@ -111,6 +111,7 @@ def prior(
     transit_dependence: float | None,
     vulnerability: float | None,
     cooling_access: float | None = None,
+    air_burden: float | None = None,
     blind_prior: float = BASE_BLIND_PRIOR,
 ) -> dict[str, float]:
     """Prior over the joint space for one zone.
@@ -127,6 +128,11 @@ def prior(
     # cooling station we have not confirmed would be exactly the reasoning this
     # system exists to refuse.
     relief = 0.5 if cooling_access is None else cooling_access
+    # Annual means, so this may only shape the prior -- which world state is
+    # likely here -- and never the likelihood of any observation. A 2024
+    # average is not evidence about this afternoon, and letting it behave like
+    # one would be the exact error this system exists to prevent.
+    air = 0.5 if air_burden is None else air_burden
 
     world = dict(BASE_WORLD_PRIOR)
     # Stranding needs three things to coincide: heat, no way to travel, and
@@ -134,7 +140,11 @@ def prior(
     # on its own block is far less exposed to a transit failure than one
     # without, whatever its vulnerability index says.
     world[World.HEAT_STRANDED] *= (0.4 + 2.2 * dependence) * (0.5 + 1.0 * (1.0 - relief))
-    world[World.HEAT] *= (0.6 + 0.8 * exposure) * (0.7 + 0.6 * (1.0 - relief))
+    # Chronic bad air means a hot day here is more often a genuine heat
+    # emergency rather than merely warm weather.
+    world[World.HEAT] *= (0.6 + 0.8 * exposure) * (0.7 + 0.6 * (1.0 - relief)) \
+        * (0.8 + 0.5 * air)
+    world[World.HEAT_STRANDED] *= 0.8 + 0.5 * air
     world = _normalise(world)
 
     return _normalise({

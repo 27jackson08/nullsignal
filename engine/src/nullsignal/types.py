@@ -42,6 +42,25 @@ class Zone:
     # them is relief that exists on a map and not in the world.
     cooling_working: float | None = None
     cooling_listed: float | None = None
+    # Chronic air burden, annual means. Describes what these residents breathe
+    # year after year, never what is in the air this afternoon.
+    ozone_ppb: float | None = None
+    pm25_ugm3: float | None = None
+
+    @property
+    def chronic_air_burden(self) -> float | None:
+        """Ozone on a 0..1 scale across the observed city range.
+
+        Ozone formation is temperature-driven, so a hot day in a
+        high-ozone district is a worse day for the same person than a hot day
+        elsewhere. Kept separate from vulnerability because the two do not
+        track each other -- across NYC, ozone is essentially flat by
+        vulnerability quintile.
+        """
+        if self.ozone_ppb is None:
+            return None
+        low, high = config.OZONE_RANGE_PPB
+        return max(0.0, min(1.0, (self.ozone_ppb - low) / (high - low)))
 
     @property
     def unreachable_relief(self) -> float | None:

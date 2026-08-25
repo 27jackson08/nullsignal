@@ -77,6 +77,11 @@ QUIET_TEMPO = 0.6
 # ...and above this, it is visibly agitated.
 ELEVATED_TEMPO = 1.6
 
+# --- Air quality --------------------------------------------------------------
+# Observed range across NYC community districts, 2024 annual means. Used only
+# to put ozone on a 0..1 scale; it is never read as a current measurement.
+OZONE_RANGE_PPB = (27.0, 39.0)
+
 # --- Harm model ---------------------------------------------------------------
 # Vulnerability multiplier spans this range as SVI goes 0 -> 1. Verification in
 # the most vulnerable tracts is worth ~3x the same check in the least.
