@@ -99,6 +99,7 @@ export function ZoneMap({ zones, mode, selectedGeoid, onSelect, view }: ZoneMapP
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [transform, setTransform] = useState<ZoomTransform>(zoomIdentity);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const element = containerRef.current;
@@ -133,6 +134,20 @@ export function ZoneMap({ zones, mode, selectedGeoid, onSelect, view }: ZoneMapP
       zones,
     );
   }, [zones, size.width, size.height]);
+
+  // Centroids in screen space, for keyboard navigation and the focus ring.
+  // Computed with the projection rather than per keypress: finding the nearest
+  // tract in a direction is a scan over all of them, and reprojecting on every
+  // arrow press would make the map feel broken to exactly the users who depend
+  // on it most.
+  const centroids = useMemo(() => {
+    if (!projection) return [];
+    const toPath = geoPath(projection);
+    return zones.features.map((feature) => {
+      const [x, y] = toPath.centroid(feature);
+      return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null;
+    });
+  }, [zones, projection]);
 
   const selectedIndex = useMemo(
     () => (selectedGeoid
@@ -213,11 +228,17 @@ export function ZoneMap({ zones, mode, selectedGeoid, onSelect, view }: ZoneMapP
       if (hoveredIndex !== null && hoveredIndex !== selectedIndex) {
         outline(hoveredIndex, "#97A3B4", 1.4);
       }
+      // Keyboard focus is drawn thicker than hover and in the accent, so it is
+      // distinguishable without relying on a pointer being present.
+      if (focusedIndex !== null && focusedIndex !== selectedIndex) {
+        outline(focusedIndex, "#7FB2E0", 2.4);
+      }
       if (selectedIndex >= 0) outline(selectedIndex, "#E6EBF2", 2);
 
       ctx.restore();
     }
-  }, [zones, projection, mode, transform, size, hoveredIndex, selectedIndex, view]);
+  }, [zones, projection, mode, transform, size, hoveredIndex, focusedIndex,
+      selectedIndex, view]);
 
   // --- hit-test buffer ------------------------------------------------------
   // Redrawn only when geometry or viewport changes, never on hover.
@@ -278,7 +299,67 @@ export function ZoneMap({ zones, mode, selectedGeoid, onSelect, view }: ZoneMapP
     return () => { selection.on(".zoom", null); };
   }, [size.width, size.height]);
 
+  /** Nearest tract in the direction pressed.
+   *
+   *  Spatial rather than list-order: arrowing right across a map should move
+   *  right across the map. A tab order down an alphabetical list would be
+   *  technically operable and practically useless for understanding geography,
+   *  which is the entire point of the view. */
+  const step = useCallback((dx: number, dy: number) => {
+    const from = focusedIndex ?? selectedIndex;
+    const origin = from >= 0 ? centroids[from] : null;
+
+    let bestIndex = -1;
+    let bestCost = Number.POSITIVE_INFINITY;
+
+    centroids.forEach((point, index) => {
+      if (!point || index === from) return;
+
+      let cost: number;
+      if (!origin) {
+        cost = point.x + point.y;   // no anchor yet: enter near the top-left
+      } else {
+        const ax = point.x - origin.x;
+        const ay = point.y - origin.y;
+        const along = ax * dx + ay * dy;
+        if (along <= 0) return;                     // wrong side
+        const across = Math.abs(ax * dy - ay * dx);
+        if (across > along * 2.5) return;           // too far off-axis
+        cost = along + across * 2;                  // prefer straight ahead
+      }
+
+      if (cost < bestCost) {
+        bestCost = cost;
+        bestIndex = index;
+      }
+    });
+
+    if (bestIndex >= 0) setFocusedIndex(bestIndex);
+  }, [centroids, focusedIndex, selectedIndex]);
+
+  const onKeyDown = useCallback((event: React.KeyboardEvent<HTMLCanvasElement>) => {
+    const moves: Record<string, [number, number]> = {
+      ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1],
+    };
+    const move = moves[event.key];
+    if (move) {
+      event.preventDefault();
+      step(move[0], move[1]);
+      return;
+    }
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      if (focusedIndex !== null) onSelect(zones.features[focusedIndex].properties.geoid);
+      return;
+    }
+    if (event.key === "Escape") {
+      setFocusedIndex(null);
+      onSelect(null);
+    }
+  }, [step, focusedIndex, zones, onSelect]);
+
   const hovered = hoveredIndex !== null ? zones.features[hoveredIndex]?.properties : undefined;
+  const focused = focusedIndex !== null ? zones.features[focusedIndex]?.properties : undefined;
 
   return (
     <div className="zone-map" ref={containerRef}>
@@ -287,7 +368,13 @@ export function ZoneMap({ zones, mode, selectedGeoid, onSelect, view }: ZoneMapP
         className="zone-canvas"
         style={{ width: size.width, height: size.height, cursor: hovered ? "pointer" : "grab" }}
         role="application"
-        aria-label="New York City census tracts by risk and evidence sufficiency"
+        tabIndex={0}
+        aria-label={"New York City census tracts by risk and evidence sufficiency. "
+          + "Use the arrow keys to move between tracts, Enter to open one, "
+          + "Escape to clear."}
+        aria-describedby="map-live-region"
+        onKeyDown={onKeyDown}
+        onBlur={() => setFocusedIndex(null)}
         onMouseMove={(event) => setHoveredIndex(pick(event))}
         onMouseLeave={() => setHoveredIndex(null)}
         onClick={(event) => {
@@ -307,6 +394,17 @@ export function ZoneMap({ zones, mode, selectedGeoid, onSelect, view }: ZoneMapP
           </span>
         </p>
       )}
+
+      {/* Announced to assistive technology as focus moves. Visually hidden
+          rather than absent: the canvas itself conveys nothing to a screen
+          reader, so this is the only channel that carries the verdict. */}
+      <p id="map-live-region" className="visually-hidden" role="status" aria-live="polite">
+        {focused
+          ? `${focused.name}, ${focused.borough}. `
+            + `${STATE_META[view?.stateFor(focused.geoid) ?? focused.state]?.label ?? ""}. `
+            + `${focused.population.toLocaleString()} residents.`
+          : ""}
+      </p>
 
       <p className="zoom-hint label" aria-hidden="true">scroll to zoom &middot; drag to pan</p>
     </div>
