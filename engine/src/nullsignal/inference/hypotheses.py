@@ -110,6 +110,7 @@ def prior(
     *,
     transit_dependence: float | None,
     vulnerability: float | None,
+    cooling_access: float | None = None,
     blind_prior: float = BASE_BLIND_PRIOR,
 ) -> dict[str, float]:
     """Prior over the joint space for one zone.
@@ -122,10 +123,18 @@ def prior(
     """
     dependence = 0.5 if transit_dependence is None else transit_dependence
     exposure = 0.5 if vulnerability is None else vulnerability
+    # Unknown relief is treated as half-covered rather than fully: assuming a
+    # cooling station we have not confirmed would be exactly the reasoning this
+    # system exists to refuse.
+    relief = 0.5 if cooling_access is None else cooling_access
 
     world = dict(BASE_WORLD_PRIOR)
-    world[World.HEAT_STRANDED] *= 0.4 + 2.2 * dependence
-    world[World.HEAT] *= 0.6 + 0.8 * exposure
+    # Stranding needs three things to coincide: heat, no way to travel, and
+    # nowhere within walking distance to cool down. A tract with working relief
+    # on its own block is far less exposed to a transit failure than one
+    # without, whatever its vulnerability index says.
+    world[World.HEAT_STRANDED] *= (0.4 + 2.2 * dependence) * (0.5 + 1.0 * (1.0 - relief))
+    world[World.HEAT] *= (0.6 + 0.8 * exposure) * (0.7 + 0.6 * (1.0 - relief))
     world = _normalise(world)
 
     return _normalise({

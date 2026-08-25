@@ -34,6 +34,7 @@ def assess(evidence: ZoneEvidence, *, rank_checks: bool = True) -> ZoneAssessmen
     prior = hypotheses.prior(
         transit_dependence=evidence.zone.pct_no_vehicle,
         vulnerability=evidence.zone.svi_overall,
+        cooling_access=evidence.zone.cooling_working,
     )
     posterior = bayes.update(prior, _observations(evidence, claims))
 

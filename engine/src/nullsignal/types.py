@@ -37,6 +37,23 @@ class Zone:
     pct_limited_english: float  # strong negative predictor of 311 reporting
     pct_poverty: float
     pct_minority: float
+    # Share of the tract within walking distance of heat relief that actually
+    # works. `listed` counts sites the city believes it has; the gap between
+    # them is relief that exists on a map and not in the world.
+    cooling_working: float | None = None
+    cooling_listed: float | None = None
+
+    @property
+    def unreachable_relief(self) -> float | None:
+        """How much of this tract's listed heat relief does not work.
+
+        Surfaced separately from coverage because it is a different claim: not
+        "there is nowhere to cool down" but "the record says there is, and
+        there is not".
+        """
+        if self.cooling_listed is None or self.cooling_working is None:
+            return None
+        return max(0.0, self.cooling_listed - self.cooling_working)
 
     @property
     def vulnerability_is_known(self) -> bool:
