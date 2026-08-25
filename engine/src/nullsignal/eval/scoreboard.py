@@ -13,6 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..sim.run import RunResult, TickRecord
+from ..types import DecisionState
 
 # Vulnerability quintile used for the concentration metric.
 TOP_QUINTILE = 0.8
@@ -31,6 +32,7 @@ class EngineScore:
     false_reassurance_rate: float
     residents_falsely_reassured: int
     false_alarm_rate: float
+    unresolved_rate: float
     harmful_zone_hours: int
     calm_zone_hours: int
     detection_lead_hours: float | None
@@ -52,6 +54,7 @@ class EngineScore:
             "false_reassurance_rate": round(self.false_reassurance_rate, 4),
             "residents_falsely_reassured": self.residents_falsely_reassured,
             "false_alarm_rate": round(self.false_alarm_rate, 4),
+            "unresolved_rate": round(self.unresolved_rate, 4),
             "detection_lead_hours": self.detection_lead_hours,
             "warning_hours": self.warning_hours,
         }
@@ -91,12 +94,16 @@ def score(result: RunResult) -> Scoreboard:
         "nullsignal", records, harmful, calm,
         reassured=lambda r: r.nullsignal_falsely_reassured,
         alarmed=lambda r: not r.nullsignal_state.is_reassuring,
+        claiming_danger=lambda r: _claims_danger(r.nullsignal_state),
+        unresolved=lambda r: r.nullsignal_state is DecisionState.UNKNOWN,
         onset_hour=onset_hour,
     )
     theirs = _score_engine(
         "baseline", records, harmful, calm,
         reassured=lambda r: r.baseline_falsely_reassured,
         alarmed=lambda r: not r.baseline_state.is_reassuring,
+        claiming_danger=lambda r: _claims_danger(r.baseline_state),
+        unresolved=lambda r: r.baseline_state is DecisionState.UNKNOWN,
         onset_hour=onset_hour,
     )
 
@@ -112,6 +119,11 @@ def score(result: RunResult) -> Scoreboard:
     )
 
 
+def _claims_danger(state: DecisionState) -> bool:
+    """States that assert something is wrong, as opposed to declining to say."""
+    return state in (DecisionState.CONFIRMED_HIGH, DecisionState.SUSPECTED)
+
+
 def _score_engine(
     name: str,
     records: tuple[TickRecord, ...],
@@ -120,19 +132,32 @@ def _score_engine(
     *,
     reassured,
     alarmed,
+    claiming_danger,
+    unresolved,
     onset_hour: float | None,
 ) -> EngineScore:
     wrongly_calm = [r for r in harmful if reassured(r)]
 
-    # A false alarm is raising the alert *while nothing is wrong*. Tracked so a
-    # low false-reassurance rate cannot be bought by simply flagging everything.
-    false_alarms = [r for r in calm if alarmed(r)]
+    # A false alarm is *claiming danger* while nothing is wrong. Tracked so a
+    # low false-reassurance rate cannot be bought by flagging everything.
+    #
+    # UNKNOWN is counted separately and deliberately. Saying "we cannot confirm
+    # this is safe" is not crying wolf -- it asserts nothing about danger, and
+    # it is the behaviour this system exists to produce. Folding it into the
+    # false-alarm rate made honesty look like noise: the canonical scenario
+    # read 33% "false alarms" that were almost entirely a frozen transit feed
+    # after the heat eased, where declining to certify was exactly right.
+    #
+    # Both are reported. Neither is hidden inside the other.
+    false_alarms = [r for r in calm if claiming_danger(r)]
+    unresolved_while_calm = [r for r in calm if unresolved(r)]
 
     return EngineScore(
         name=name,
         false_reassurance_rate=len(wrongly_calm) / len(harmful) if harmful else 0.0,
         residents_falsely_reassured=_residents(wrongly_calm),
         false_alarm_rate=len(false_alarms) / len(calm) if calm else 0.0,
+        unresolved_rate=len(unresolved_while_calm) / len(calm) if calm else 0.0,
         harmful_zone_hours=len(harmful),
         calm_zone_hours=len(calm),
         detection_lead_hours=_detection_hour(harmful, alarmed, onset_hour),
