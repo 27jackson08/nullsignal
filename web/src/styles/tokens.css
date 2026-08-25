@@ -11,7 +11,11 @@
 
   --ink:           #E6EBF2;
   --ink-dim:       #97A3B4;
-  --ink-faint:     #616D7D;
+  /* Lightened from #616D7D, which measured 3.42:1 against the panel surface
+     and 3.08:1 against the raised one -- below the 4.5:1 AA floor for text at
+     these sizes, and this token carries every micro-label in the interface.
+     Now 5.68:1 and 5.12:1. */
+  --ink-faint:     #8592A3;
 
   --accent:        #7FB2E0;
 
