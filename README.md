@@ -226,9 +226,54 @@ uncomfortable, and the tool says so in its own output:
   31.4% against a 15.4% false-alarm rate; the report flags the comparison
   rather than claiming the win.
 
+## Explanation
+
+The language model never sees the verdict. The evidence packet it receives has
+no risk score, no decision state, and no recommendation about safety — handing
+a model the conclusion and asking it to justify the conclusion produces fluent
+advocacy for whatever it was handed, including when that is wrong.
+
+Two independent guards on the prose:
+
+- **Placeholder mode.** The model never writes a number. It writes `{{field}}`
+  slots naming packet values and the application substitutes them afterwards.
+  A fabricated figure is not *caught* — it is structurally impossible, because
+  the model has no channel through which to emit one. Unknown field names are
+  rejected.
+- **Numeric verification.** Substituted output is checked anyway: every numeric
+  token must trace to the packet, or the whole explanation is discarded.
+
+Either failure falls back to the deterministic template, so the worst case is
+duller prose rather than confident fiction. That template is the guaranteed
+floor, not a degraded mode — it needs no key, no network, and no model, and a
+dead credential cannot leave an operator without an account of why a tract was
+flagged. Set `ANTHROPIC_API_KEY` to enable the generated path.
+
+Explanations cache on a packet fingerprint, so identical evidence yields the
+identical sentence.
+
+## The six invariants
+
+These are the product specification. All six are implemented and passing.
+
+```
+test_silence_never_confirms_safe            zero evidence -> UNKNOWN, never CONFIRMED_LOW
+test_contradiction_widens_not_averages      conflicts lower sufficiency, never move risk
+test_stale_source_cannot_move_posterior     KL(posterior || prior) decays to zero
+test_equity_monotonicity                    evidence fixed, higher SVI ranks higher
+test_silent_failure_beats_baseline          zero false reassurance, 2h of warning
+test_llm_emits_no_unsupported_numbers       every figure traces to the packet
+```
+
+```
+make test      # 87 tests
+make check     # tests + typecheck + production build
+make demo      # engine on :8000, map on :5173
+```
+
 ## Status
 
-Day 5 of 7. See `docs/PLAN.md`.
+Complete: 7 of 7 days. See `docs/PLAN.md`.
 
 The suite doubles as a build progress meter: invariants for components not yet
 built are skipped with the day they unlock, rather than quietly passing.
