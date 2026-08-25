@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from . import gtfs_static, socrata, svi, transit, weather
+from . import cooling, gtfs_static, socrata, svi, transit, weather
 from .base import FetchResult, SourceFetchError
 
 MANIFEST_NAME = "manifest.json"
@@ -53,6 +53,7 @@ def run_snapshot(
         "weather": lambda: [weather.fetch_forecasts(dest_dir)],
         "transit": lambda: transit.fetch_realtime(dest_dir),
         "gtfs_static": lambda: gtfs_static.fetch_stations(dest_dir),
+        "cooling": lambda: [cooling.fetch_cooling_sites(dest_dir)],
     }
 
     results: list[FetchResult] = []
