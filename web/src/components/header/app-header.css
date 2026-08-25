@@ -5,6 +5,7 @@
   padding: 0 var(--space-5);
   background: var(--surface);
   border-bottom: 1px solid var(--rule);
+  min-width: 0;
 }
 
 .brand h1 {
@@ -67,6 +68,26 @@
   .app-header { padding: 0 var(--space-3); gap: var(--space-3); }
   .brand .tagline { display: none; }
   .mode-switch button { padding: .5rem .6rem; font-size: .64rem; }
+}
+
+@media (max-width: 640px) {
+  .app-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
+  }
+  .brand { flex: 1 1 100%; }
+  .brand h1 { font-size: 1rem; }
+  /* The switch takes the second row and scrolls rather than stretching the
+     shell: four view names will not fit on a phone at any legible size. */
+  .mode-switch {
+    flex: 1 1 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .mode-switch::-webkit-scrollbar { display: none; }
+  .mode-switch button { flex: 0 0 auto; }
 }
 
 .scenario-picker { display: flex; flex-direction: column; gap: .2rem; }

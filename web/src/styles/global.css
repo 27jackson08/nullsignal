@@ -22,11 +22,18 @@ body {
   display: grid;
   grid-template-rows: var(--header-height) 1fr;
   height: 100%;
+  /* Grid items default to min-width:auto, so an over-wide header stretches the
+     whole shell and everything below inherits the overflow -- which is how a
+     header that would not fit made the map canvas 387px wide in a 320px
+     viewport. */
+  min-width: 0;
+  max-width: 100vw;
 }
 .app-shell.has-timeline { grid-template-rows: var(--header-height) 1fr auto; }
 
 .app-body {
   position: relative;
+  min-width: 0;
   display: grid;
   /* minmax(0, …) on the map column: a grid track defaults to min-content, so
      the canvas would refuse to shrink below its intrinsic size and push the
@@ -36,7 +43,14 @@ body {
 }
 
 @media (max-width: 900px) {
-  .app-body { grid-template-columns: 1fr; }
+  .app-body { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Below this the brand and the view switch cannot share a line, so the header
+   becomes two rows and gives up its fixed height. */
+@media (max-width: 640px) {
+  .app-shell { grid-template-rows: auto 1fr; }
+  .app-shell.has-timeline { grid-template-rows: auto 1fr auto; }
 }
 
 .label {
