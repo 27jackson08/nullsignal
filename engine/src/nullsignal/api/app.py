@@ -20,6 +20,7 @@ from ..explain.packet import build as build_packet
 from ..inference import engine, pipeline
 from ..reliability.feeds import FeedHealth, assess_feeds
 from . import scenarios as scenario_api
+from .security import SecurityHeadersMiddleware
 from ..sources.snapshot import load_manifest
 from ..store import DB_FILENAME, connect
 from ..types import ZoneAssessment
@@ -54,6 +55,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="NullSignal", version="0.1.0", lifespan=lifespan)
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -67,6 +69,7 @@ app.add_middleware(
 
 
 def _rebuild() -> None:
+    """Assess the whole city once and cache every view of the result."""
     if not DB_PATH.exists():
         raise RuntimeError(
             f"no store at {DB_PATH}. Run: uv run nullsignal snapshot && uv run nullsignal build"
@@ -75,86 +78,99 @@ def _rebuild() -> None:
     evidence = pipeline.load_evidence(DB_PATH, raw_dir=RAW_DIR)
     feed_health = assess_feeds(RAW_DIR)
     geometry = _load_geometry()
-    # Calibrated against this snapshot so the comparison is against a
-    # dashboard someone would actually run, not one rigged to fail.
+    # Calibrated against this snapshot so the comparison is against a dashboard
+    # someone would actually run, not one rigged to fail.
     thresholds = baseline.calibrate(evidence)
 
-    features: list[dict] = []
-    detail: dict[str, dict] = {}
-    queue: list[dict] = []
-    counts = {"nullsignal": {}, "baseline": {}}
+    assessed = [
+        (item, engine.assess(item), baseline.assess(item, thresholds))
+        for item in evidence
+    ]
 
-    for item in evidence:
-        ours = engine.assess(item)
-        theirs = baseline.assess(item, thresholds)
-        geoid = item.zone.geoid
-
-        counts["nullsignal"][ours.state.value] = \
-            counts["nullsignal"].get(ours.state.value, 0) + 1
-        counts["baseline"][theirs.state.value] = \
-            counts["baseline"].get(theirs.state.value, 0) + 1
-
-        shape = geometry.get(geoid)
-        if shape is not None:
-            features.append({
-                "type": "Feature",
-                "geometry": shape,
-                "properties": {
-                    "geoid": geoid,
-                    "name": item.zone.name,
-                    "borough": item.zone.borough,
-                    "population": item.zone.population,
-                    "state": ours.state.value,
-                    "baseline_state": theirs.state.value,
-                    "risk": round(ours.risk, 4),
-                    "sufficiency": round(ours.sufficiency.score, 4),
-                    "disagrees": ours.state.value != theirs.state.value,
-                },
-            })
-
-        detail[geoid] = _detail(item, ours, theirs)
-        queue.append({
-            "geoid": geoid,
-            # Per-capita harm times the people it lands on. Ranking on the
-            # per-capita figure alone put empty parks and a cemetery at the top
-            # of the operator's queue, because a tract with nobody in it can be
-            # just as unresolved as a dense one and the arithmetic could not
-            # tell them apart.
-            "residents_at_stake": round(ours.unresolved_harm * item.zone.population, 2),
-            "name": item.zone.name,
-            "borough": item.zone.borough,
-            "population": item.zone.population,
-            "state": ours.state.value,
-            "unresolved_harm": ours.unresolved_harm,
-            "unseen_danger": ours.unseen_danger,
-            "risk": round(ours.risk, 4),
-            "sufficiency": round(ours.sufficiency.score, 4),
-            "decision": ours.current_decision,
-            "next_check": ours.recommended_checks[0].label if ours.recommended_checks else None,
-            "next_check_minutes": (ours.recommended_checks[0].latency_minutes
-                                   if ours.recommended_checks else None),
-        })
-
-    state.features = features
-    state.detail = detail
+    state.features = [
+        _feature(item, ours, theirs, geometry[item.zone.geoid])
+        for item, ours, theirs in assessed
+        if item.zone.geoid in geometry
+    ]
+    state.detail = {
+        item.zone.geoid: _detail(item, ours, theirs)
+        for item, ours, theirs in assessed
+    }
     # Ranked by expected residents at stake: unresolved harm per capita times
     # the population it falls on. Unresolved harm alone is monotone in
     # vulnerability and doubt (see voi/evpi.unresolved_harm) but says nothing
     # about how many people are standing there.
-    queue.sort(key=lambda row: -row["residents_at_stake"])
-    state.queue = queue
+    state.queue = sorted(
+        (_queue_row(item, ours) for item, ours, _ in assessed),
+        key=lambda row: -row["residents_at_stake"],
+    )
     state.evidence = evidence
     state.playback_cache = {}
+    state.summary = _summary(assessed, feed_health)
 
-    state.summary = {
-        "zone_count": len(evidence),
+
+def _feature(item, ours: ZoneAssessment, theirs: ZoneAssessment, shape: dict) -> dict:
+    return {
+        "type": "Feature",
+        "geometry": shape,
+        "properties": {
+            "geoid": item.zone.geoid,
+            "name": item.zone.name,
+            "borough": item.zone.borough,
+            "population": item.zone.population,
+            "state": ours.state.value,
+            "baseline_state": theirs.state.value,
+            "risk": round(ours.risk, 4),
+            "sufficiency": round(ours.sufficiency.score, 4),
+            "disagrees": ours.state.value != theirs.state.value,
+        },
+    }
+
+
+def _queue_row(item, ours: ZoneAssessment) -> dict:
+    check = ours.recommended_checks[0] if ours.recommended_checks else None
+    return {
+        "geoid": item.zone.geoid,
+        # Per-capita harm times the people it lands on. Ranking on the
+        # per-capita figure alone put empty parks and a cemetery at the top of
+        # the operator's queue: a tract with nobody in it can be just as
+        # unresolved as a dense one, and the arithmetic could not tell them
+        # apart.
+        "residents_at_stake": round(ours.unresolved_harm * item.zone.population, 2),
+        "name": item.zone.name,
+        "borough": item.zone.borough,
+        "population": item.zone.population,
+        "state": ours.state.value,
+        "unresolved_harm": ours.unresolved_harm,
+        "unseen_danger": ours.unseen_danger,
+        "risk": round(ours.risk, 4),
+        "sufficiency": round(ours.sufficiency.score, 4),
+        "decision": ours.current_decision,
+        "next_check": check.label if check else None,
+        "next_check_minutes": check.latency_minutes if check else None,
+    }
+
+
+def _summary(assessed: list, feed_health: dict[str, FeedHealth]) -> dict:
+    counts: dict[str, dict[str, int]] = {"nullsignal": {}, "baseline": {}}
+    disagreements = 0
+    reassured_by_baseline_only = 0
+
+    for _, ours, theirs in assessed:
+        counts["nullsignal"][ours.state.value] = \
+            counts["nullsignal"].get(ours.state.value, 0) + 1
+        counts["baseline"][theirs.state.value] = \
+            counts["baseline"].get(theirs.state.value, 0) + 1
+        if ours.state is not theirs.state:
+            disagreements += 1
+        if theirs.state.is_reassuring and not ours.state.is_reassuring:
+            reassured_by_baseline_only += 1
+
+    return {
+        "zone_count": len(assessed),
         "states": counts,
-        "disagreements": sum(1 for f in features if f["properties"]["disagrees"]),
-        "reassured_by_baseline_only": sum(
-            1 for f in features
-            if f["properties"]["baseline_state"] == "CONFIRMED_LOW"
-            and f["properties"]["state"] != "CONFIRMED_LOW"
-        ),
+        "disagreements": disagreements,
+        "reassured_by_baseline_only": reassured_by_baseline_only,
         "snapshot": _manifest_summary(),
         "feeds": _feed_summary(feed_health),
     }
