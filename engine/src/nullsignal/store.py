@@ -57,6 +57,7 @@ def build_store(raw_dir: Path, db_path: Path) -> dict[str, int]:
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
     con = connect(db_path)
+    _register_district_crosswalk(con)
     counts: dict[str, int] = {}
     try:
         counts["tracts"] = _load_tracts(con, raw_dir / "nyc_tracts.json")
@@ -67,6 +68,7 @@ def build_store(raw_dir: Path, db_path: Path) -> dict[str, int]:
         counts["reports_by_category"] = _aggregate_reports_by_category(con)
         counts["stations"] = _load_stations(con, raw_dir / "gtfs_stations.json")
         counts["cooling_sites"] = _load_cooling(con, raw_dir / "cooling_sites.json")
+        counts["air_quality"] = _load_air_quality(con, raw_dir / "air_quality.json")
         counts["cooling_access"] = _compute_cooling_access(con)
         counts["transit_coverage"] = _compute_transit_coverage(con)
         counts["weather"] = _load_weather(con, raw_dir / "nws_forecast.json")
@@ -85,6 +87,7 @@ def _load_tracts(con: duckdb.DuckDBPyConnection, path: Path) -> int:
             geoid,
             ntaname                       AS neighbourhood,
             boroname                      AS borough,
+            cdta2020                      AS community_district,
             ST_GeomFromGeoJSON(the_geom::JSON::VARCHAR) AS geom
         FROM read_json_auto(?, maximum_object_size=200000000)
         WHERE geoid IS NOT NULL
@@ -138,6 +141,7 @@ def _build_zones(con: duckdb.DuckDBPyConnection) -> int:
             t.geoid,
             t.neighbourhood,
             t.borough,
+            t.community_district,
             t.geom,
             ST_AsGeoJSON(ST_Simplify(t.geom, 0.0001)) AS geom_simplified,
             COALESCE(s.population, 0)        AS population,
@@ -269,6 +273,52 @@ def _load_cooling(con: duckdb.DuckDBPyConnection, path: Path) -> int:
         [str(path)],
     )
     return _count(con, "cooling_sites")
+
+
+def _load_air_quality(con: duckdb.DuckDBPyConnection, path: Path) -> int:
+    """Chronic air burden, joined to tracts through their community district.
+
+    Annual means. They describe what these residents breathe year after year,
+    not what is in the air this afternoon, and the engine is only permitted to
+    use them as a prior for that reason.
+    """
+    path = _resolve(path, "air_quality")
+    con.execute(
+        """
+        CREATE OR REPLACE TABLE air_quality AS
+        SELECT district_id, district_name, indicator,
+               TRY_CAST(value AS DOUBLE) AS value, period
+        FROM read_json_auto(?)
+        """,
+        [str(path)],
+    )
+
+    # "BK10" -> "310": borough letters become the leading digit.
+    con.execute(
+        """
+        ALTER TABLE zones ADD COLUMN IF NOT EXISTS ozone_ppb DOUBLE;
+        ALTER TABLE zones ADD COLUMN IF NOT EXISTS pm25_ugm3 DOUBLE;
+        UPDATE zones SET
+            ozone_ppb = (
+                SELECT a.value FROM air_quality a
+                WHERE a.indicator = 'ozone_ppb'
+                  AND a.district_id = _district_id(zones.community_district)
+            ),
+            pm25_ugm3 = (
+                SELECT a.value FROM air_quality a
+                WHERE a.indicator = 'pm25_ugm3'
+                  AND a.district_id = _district_id(zones.community_district)
+            );
+        """
+    )
+    return _count(con, "air_quality")
+
+
+def _register_district_crosswalk(con: duckdb.DuckDBPyConnection) -> None:
+    from .sources.air_quality import district_id_for
+
+    con.create_function("_district_id", district_id_for,
+                        ["VARCHAR"], "VARCHAR", null_handling="special")
 
 
 def _compute_cooling_access(con: duckdb.DuckDBPyConnection) -> int:
