@@ -22,8 +22,11 @@ build:
 test:
 	uv run pytest -v
 
+# The root tsconfig is a project-references stub: `tsc --noEmit` against it
+# passes while the real build fails. Check the app project directly.
 check: test
-	cd web && npx tsc --noEmit
+	cd web && npx tsc --noEmit -p tsconfig.app.json
+	cd web && npm run build
 
 serve:
 	uv run nullsignal serve
