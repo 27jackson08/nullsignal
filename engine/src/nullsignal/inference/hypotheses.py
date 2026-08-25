@@ -136,15 +136,25 @@ def prior(
 
 
 def scaled_harm(world: World, zone_multiplier: float = 1.0) -> float:
-    """Harm from a world state for this zone, on a 0..1 scale.
+    """Harm from a world state, on a 0..1 scale.
 
-    The single definition of harm. `expected_harm` and the decision utilities
-    both route through here: when they each normalised differently, a tract
-    could come out CONFIRMED_LOW while the recommended action was "dispatch
-    crews" -- a verdict and a decision computed on incompatible scales.
+    The single definition of harm: `expected_harm` and the decision utilities
+    both route through here, so a tract can never come out CONFIRMED_LOW beside
+    advice to dispatch crews.
+
+    `zone_multiplier` is accepted and deliberately ignored for the risk
+    estimate. It once divided through by the maximum multiplier, which turned
+    vulnerability into a *discount* for every tract below the ceiling: a
+    low-vulnerability tract where people were **certainly** stranded scored
+    0.33 risk and came back "confirmed low". Whether people are in danger is
+    not a function of how fragile they are.
+
+    Vulnerability still enters twice, where it belongs: it shapes the prior
+    over world states (a transit failure strands the carless, heat harms the
+    elderly), and it scales the verification queue so effort is drawn toward
+    fragile tracts. Neither of those distorts the meaning of the risk scale.
     """
-    ceiling = config.VULNERABILITY_MULTIPLIER_RANGE[1]
-    return min(1.0, HARM_BY_WORLD[world] * zone_multiplier / ceiling)
+    return min(1.0, HARM_BY_WORLD[world])
 
 
 def expected_harm(posterior: dict[str, float], zone_multiplier: float = 1.0) -> float:

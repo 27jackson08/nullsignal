@@ -91,7 +91,11 @@ def unresolved_harm(
     it usable as a queue.
     """
     from ..inference.hypotheses import expected_harm
-    return expected_harm(posterior, harm_scale) * (1.0 - max(0.0, min(1.0, sufficiency)))
+    # The vulnerability multiplier is applied *here* and nowhere else. Risk
+    # answers "are people in danger", which does not depend on how fragile they
+    # are; the queue answers "where should scarce effort go", which does.
+    doubt = 1.0 - max(0.0, min(1.0, sufficiency))
+    return expected_harm(posterior) * doubt * harm_scale
 
 
 def rank(

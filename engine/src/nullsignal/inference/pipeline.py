@@ -11,6 +11,7 @@ from pathlib import Path
 from .. import config
 from ..bias.propensity import Propensity, PropensityModel, fit as fit_propensity
 from ..heat import heat_index_f
+from ..reliability.consistency import apply_to_cohort
 from ..reliability.feeds import FeedHealth, assess_feeds
 from ..store import connect
 from ..types import Reliability, Zone
@@ -76,10 +77,10 @@ def load_evidence(
 
     propensity_model = fit_propensity(category_counts, populations)
 
-    return [
+    return apply_to_cohort([
         _to_evidence(row, now, feed_health, propensity_model.get(row[0]))
         for row in rows
-    ]
+    ])
 
 
 def _to_evidence(
