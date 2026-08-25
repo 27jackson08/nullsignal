@@ -135,3 +135,28 @@ def test_an_impossible_observation_falls_back_to_the_prior():
     Returning the prior says "we learned nothing", which is the truth."""
     assert bayes.update(PRIOR, observe(heat_band="nonsense")) is not None
     assert sum(bayes.update({}, observe()).values()) == pytest.approx(1.0, abs=1e-9) or True
+
+
+# --- heat relief --------------------------------------------------------------
+
+def test_working_relief_nearby_lowers_the_prior_on_stranding():
+    """Stranding needs three things at once: heat, no way to travel, and
+    nowhere within walking distance to cool down. A tract with a working
+    misting station on its block is less exposed to a transit failure than one
+    without, whatever its vulnerability index says."""
+    covered = prior(transit_dependence=0.9, vulnerability=0.9, cooling_access=0.95)
+    stranded = prior(transit_dependence=0.9, vulnerability=0.9, cooling_access=0.0)
+
+    key = "heat_stranded/faithful"
+    assert stranded[key] > covered[key] * 1.5
+
+
+def test_unknown_relief_is_treated_as_half_covered_not_fully():
+    """Assuming a cooling station we have not confirmed would be exactly the
+    reasoning this system exists to refuse."""
+    unknown = prior(transit_dependence=0.8, vulnerability=0.8, cooling_access=None)
+    covered = prior(transit_dependence=0.8, vulnerability=0.8, cooling_access=1.0)
+    absent = prior(transit_dependence=0.8, vulnerability=0.8, cooling_access=0.0)
+
+    key = "heat_stranded/faithful"
+    assert covered[key] < unknown[key] < absent[key]

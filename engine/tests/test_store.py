@@ -109,3 +109,49 @@ def test_the_store_rebuilds_from_gzipped_fixtures(raw_dir):
 
     with pytest.raises(FileNotFoundError, match="snapshot missing"):
         _resolve(raw_dir / "does_not_exist.json", "phantom")
+
+
+def test_heat_relief_is_measured_twice(store):
+    """Once over every listed site, once over only the working ones.
+
+    The difference is relief the city believes it has and does not -- the same
+    kind of gap this system exists to surface, sitting inside the mitigation it
+    would otherwise recommend.
+    """
+    listed, working = store.execute(
+        "SELECT AVG(cooling_listed), AVG(cooling_working) FROM zones").fetchone()
+    assert 0 < working < listed <= 1.0
+
+    overstated = store.execute("""
+        SELECT COUNT(*), SUM(population) FROM zones
+        WHERE cooling_listed >= 0.2 AND cooling_working < 0.05 AND population > 0
+    """).fetchone()
+    assert overstated[0] > 0, "the fixture should contain overstated tracts"
+
+
+def test_both_coordinate_systems_are_placed_in_new_york(store):
+    """The two source datasets share column names and use different coordinate
+    systems. Reading them the same way puts 755 sites in the Gulf of Guinea."""
+    outside = store.execute("""
+        SELECT COUNT(*) FROM cooling_sites
+        WHERE ST_X(geom) NOT BETWEEN -74.3 AND -73.6
+           OR ST_Y(geom) NOT BETWEEN 40.4 AND 41.0
+    """).fetchone()[0]
+    assert outside == 0
+
+    kinds = dict(store.execute(
+        "SELECT kind, COUNT(*) FROM cooling_sites GROUP BY kind").fetchall())
+    assert kinds.get("spray_shower", 0) > 500, "state-plane rows must survive"
+    assert kinds.get("cooling_site", 0) > 200
+
+
+def test_a_broken_site_does_not_count_as_relief(store):
+    listed, working = store.execute(
+        "SELECT COUNT(*), SUM(CASE WHEN is_working THEN 1 ELSE 0 END) FROM cooling_sites"
+    ).fetchone()
+    assert working < listed, "the fixture should contain broken sites"
+
+    statuses = dict(store.execute("""
+        SELECT status, COUNT(*) FROM cooling_sites WHERE NOT is_working GROUP BY status
+    """).fetchall())
+    assert "Broken" in statuses
