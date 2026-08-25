@@ -1,5 +1,5 @@
 {
-  "snapshot_at": "2026-08-25T14:20:06.248339+00:00",
+  "snapshot_at": "2026-08-25T15:00:09.633447+00:00",
   "sources": [
     {
       "source_id": "311",
@@ -9,6 +9,15 @@
       "byte_count": 47096125,
       "path": "311_requests.json",
       "note": "200000 geocoded requests since 2026-06-25T10:39:20"
+    },
+    {
+      "source_id": "air_quality",
+      "fetched_at": "2026-08-25T15:00:09.632719+00:00",
+      "status_code": 200,
+      "content_hash": "92cb2af8e75d275a",
+      "byte_count": 15317,
+      "path": "air_quality.json",
+      "note": "118 district-indicator values, periods 2024"
     },
     {
       "source_id": "cooling_sites",
