@@ -212,26 +212,33 @@ anything to see.
 
 ### Across five scenarios
 
-| Scenario | Baseline | NullSignal |
+| Scenario | Baseline FR / FA | NullSignal FR / FA / unresolved |
 | --- | --- | --- |
-| heatwave, silent transit failure | 83.1% | **0.0%** |
-| honest outage (feed stops answering) | 83.1% | **0.0%** |
-| reporting collapse | 0.0% * | **5.1%** |
-| sensor drift, one station | 15.2% * | **5.7%** |
-| sensor drift, every station | 83.1% | 96.6% |
+| heatwave, silent transit failure | 83.1% / 8.7% | **0.0% / 0.0%** / 33.0% |
+| honest outage | 83.1% / 8.2% | **0.0% / 0.0%** / 22.6% |
+| reporting collapse | 0.0% / **60.3%** | 5.7% / 12.1% / 19.5% |
+| sensor drift, one station | 15.2% / **65.0%** | **5.9% / 4.8%** / 17.4% |
+| sensor drift, every station | 83.1% / 16.7% | **70.5% / 0.0%** / 14.7% |
 
-\* Stopped clocks: those two baseline figures are bought by alarming 60% and
-65% of the time when nothing is wrong. The report flags them rather than
-letting the comparison stand.
+FR is false reassurance — calling a place safe while people were in danger.
+FA is a false alarm — **claiming danger** when nothing was wrong.
 
-### Where it still loses
+### Two different failures, two different columns
 
-**sensor-drift-masking-heat — beaten, 96.6% against 83.1%, and it stays in the
-suite.** When *every* station drifts the same way there is nothing left to
-disagree with, and catching it needs an external reference the system does not
-have. A single drifting station is caught (see below); a uniformly wrong
-instrument is not, and the test suite asserts that limit explicitly rather than
-letting it be quietly assumed away.
+An earlier version folded UNKNOWN into the false-alarm rate, and the canonical
+scenario read 33% "false alarms". Almost all of them were a still-frozen
+transit feed after the heat had eased, where declining to certify safety was
+exactly right.
+
+Saying "we cannot confirm this is safe" asserts nothing about danger. It is the
+behaviour this system exists to produce, and counting it as crying wolf made
+honesty look like noise. Separated, NullSignal claims danger falsely **0.0%**
+of the time on the canonical scenario; the baseline does so 8.7% of the time
+and structurally cannot report an unresolved case at all.
+
+Two of the baseline's figures are stopped clocks — its 0% false reassurance on
+reporting collapse is bought by alarming 60% of the time — and the tool flags
+those rather than letting the comparison stand.
 
 ## Cross-source agreement
 
@@ -500,6 +507,27 @@ larger in the most vulnerable fifth of the city than the least.
 > Nothing in either schema says so. Reading both the same way places 755 sites
 > in the Gulf of Guinea. The system is classified per row by magnitude rather
 > than assumed per dataset.
+
+## Climatology — the reference no fault can move
+
+Cross-station agreement compares instruments to each other, so a fault that
+moves *every* station the same way passes it unremarked. That case was a
+documented loss until the system gained an outside reference: ten years of
+day-of-year normals for New York, from Open-Meteo's keyless archive.
+
+A citywide reading far from what a decade of the same date has actually done is
+anomalous however well the stations agree with one another. Uniform drift went
+from **96.6% false reassurance to 70.5%** — from losing to the baseline to
+beating it.
+
+Two things keep it from firing on ordinary weather. The threshold comes from
+the observed spread rather than being chosen — NYC daily maxima vary about
+7.7°F around their normal, so a two-sigma day is merely notable. And the bounds
+are asymmetric: a heat index legitimately runs well above the air temperature
+these normals are built from, so the upper bound is generous, while the lower
+one is not — reading cool is the direction a drifting sensor fails in and the
+direction that gets people hurt. A genuine 108°F heatwave passes; a 20°F drift
+does not.
 
 ## Air quality
 
