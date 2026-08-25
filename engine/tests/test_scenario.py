@@ -175,3 +175,79 @@ def test_an_engine_that_alarms_constantly_is_flagged_as_such():
     from nullsignal.eval.scoreboard import EngineScore
     stopped_clock = EngineScore("test", 0.0, 0, 0.85, 10, 10, 0.0, 0.0)
     assert stopped_clock.alarms_indiscriminately
+
+
+# --- scenario parsing ---------------------------------------------------------
+
+def write_scenario(tmp_path, body: str):
+    path = tmp_path / "s.yaml"
+    path.write_text(body)
+    return path
+
+
+def test_a_scenario_round_trips(tmp_path):
+    from nullsignal.sim import scenario as scenario_module
+
+    path = write_scenario(tmp_path, """
+name: round-trip
+description: a test
+duration_hours: 6
+tick_hours: 1
+timeline:
+  - at_hour: 2
+    heat_index_f: 95
+    note: warming
+  - at_hour: 0
+    heat_index_f: 84
+  - at_hour: 4
+    inject: {source: gtfs_rt, mode: STALE_BUT_200}
+""")
+    loaded = scenario_module.load(path)
+    assert loaded.name == "round-trip"
+    assert loaded.tick_count == 7
+    assert [e.at_hour for e in loaded.events] == [0, 2, 4], "events sort by hour"
+    assert loaded.events[-1].inject.mode is FailureMode.STALE_BUT_200
+
+
+def test_an_unknown_failure_mode_names_itself(tmp_path):
+    from nullsignal.sim import scenario as scenario_module
+
+    path = write_scenario(tmp_path, """
+name: bad
+timeline:
+  - at_hour: 1
+    inject: {source: gtfs_rt, mode: EXPLODES}
+""")
+    with pytest.raises(ValueError, match="failure mode"):
+        scenario_module.load(path)
+
+
+def test_an_event_without_an_hour_is_rejected(tmp_path):
+    from nullsignal.sim import scenario as scenario_module
+
+    path = write_scenario(tmp_path, "name: bad\ntimeline:\n  - heat_index_f: 90\n")
+    with pytest.raises(ValueError, match="at_hour"):
+        scenario_module.load(path)
+
+
+def test_a_scenario_that_is_not_a_mapping_is_rejected(tmp_path):
+    from nullsignal.sim import scenario as scenario_module
+
+    with pytest.raises(ValueError, match="mapping"):
+        scenario_module.load(write_scenario(tmp_path, "- just\n- a list\n"))
+
+
+def test_the_shipped_scenarios_all_parse():
+    """Guard on the fixtures themselves: a malformed scenario should fail in
+    CI, not in front of an audience."""
+    from pathlib import Path
+    from nullsignal.sim import scenario as scenario_module
+
+    directory = Path(__file__).resolve().parents[2] / "scenarios"
+    paths = scenario_module.available(directory)
+    assert len(paths) >= 4
+
+    for path in paths:
+        loaded = scenario_module.load(path)
+        assert loaded.name and loaded.tick_count > 1, path.name
+        assert loaded.description.strip(), f"{path.name} needs a description"
