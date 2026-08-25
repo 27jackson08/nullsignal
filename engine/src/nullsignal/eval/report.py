@@ -38,9 +38,31 @@ def run_evaluation(
     print(f"running {loaded.name} ({loaded.duration_hours}h)...", flush=True)
 
     evidence = pipeline.load_evidence(db_path, raw_dir=raw_dir)
-    result = simrun.run(loaded, evidence)
+    result = simrun.run(loaded, evidence, _summer_normal(db_path))
     _render(score(result), loaded.description.strip())
     return 0
+
+
+def _summer_normal(db_path: Path) -> dict | None:
+    """The normal for a representative summer day.
+
+    Scenarios are dated relative to their own start rather than to the wall
+    clock, so they are scored against a July normal instead of whatever day the
+    evaluation happens to run on.
+    """
+    from ..store import connect
+
+    con = connect(db_path, read_only=True)
+    try:
+        row = con.execute(
+            "SELECT mean_max_f, stdev_f, samples FROM climate_normals "
+            "WHERE day_of_year = 199").fetchone()
+    except Exception:  # noqa: BLE001
+        return None
+    finally:
+        con.close()
+    return ({"mean_max_f": row[0], "stdev_f": row[1], "samples": row[2]}
+            if row else None)
 
 
 def _render(board: Scoreboard, description: str) -> None:
@@ -56,14 +78,20 @@ def _render(board: Scoreboard, description: str) -> None:
     print(f"  Residents in genuinely endangered tracts: {board.residents_at_risk:,}")
     print()
     print(f"  {'':12} {'false reassurance':>19} {'residents':>12} "
-          f"{'false alarm':>13} {'warning':>9}")
+          f"{'false alarm':>13} {'unresolved':>12} {'warning':>9}")
 
     for engine in (board.baseline, board.nullsignal):
         warning = (f"{engine.warning_hours:.0f}h"
                    if engine.warning_hours is not None else "none")
         print(f"  {engine.name:12} {engine.false_reassurance_rate:>18.1%} "
               f"{engine.residents_falsely_reassured:>12,} "
-              f"{engine.false_alarm_rate:>12.1%} {warning:>9}")
+              f"{engine.false_alarm_rate:>12.1%} {engine.unresolved_rate:>11.1%} "
+              f"{warning:>9}")
+
+    print()
+    print("  false alarm = claimed danger while nothing was wrong.")
+    print("  unresolved  = declined to confirm safety. Not the same failure, so")
+    print("                not folded into the same number.")
 
     for engine in (board.baseline, board.nullsignal):
         if engine.alarms_indiscriminately:

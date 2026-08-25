@@ -69,6 +69,7 @@ def build_store(raw_dir: Path, db_path: Path) -> dict[str, int]:
         counts["stations"] = _load_stations(con, raw_dir / "gtfs_stations.json")
         counts["cooling_sites"] = _load_cooling(con, raw_dir / "cooling_sites.json")
         counts["air_quality"] = _load_air_quality(con, raw_dir / "air_quality.json")
+        counts["climatology"] = _load_climatology(con, raw_dir / "climatology.json")
         counts["cooling_access"] = _compute_cooling_access(con)
         counts["transit_coverage"] = _compute_transit_coverage(con)
         counts["weather"] = _load_weather(con, raw_dir / "nws_forecast.json")
@@ -312,6 +313,23 @@ def _load_air_quality(con: duckdb.DuckDBPyConnection, path: Path) -> int:
         """
     )
     return _count(con, "air_quality")
+
+
+def _load_climatology(con: duckdb.DuckDBPyConnection, path: Path) -> int:
+    """Day-of-year normals -- the reference no instrument fault can move."""
+    path = _resolve(path, "climatology")
+    con.execute(
+        """
+        CREATE OR REPLACE TABLE climate_normals AS
+        SELECT CAST(day_of_year AS INTEGER) AS day_of_year,
+               TRY_CAST(mean_max_f AS DOUBLE) AS mean_max_f,
+               TRY_CAST(stdev_f AS DOUBLE)    AS stdev_f,
+               CAST(samples AS INTEGER)       AS samples
+        FROM read_json_auto(?)
+        """,
+        [str(path)],
+    )
+    return _count(con, "climate_normals")
 
 
 def _register_district_crosswalk(con: duckdb.DuckDBPyConnection) -> None:

@@ -11,6 +11,7 @@ from pathlib import Path
 from .. import config
 from ..bias.propensity import Propensity, PropensityModel, fit as fit_propensity
 from ..heat import heat_index_f
+from ..reliability.climate_check import apply_to_cohort as apply_climate
 from ..reliability.consistency import apply_to_cohort
 from ..reliability.feeds import FeedHealth, assess_feeds
 from ..store import connect
@@ -74,15 +75,28 @@ def load_evidence(
         populations = dict(con.execute(
             "SELECT geoid, COALESCE(population, 0) FROM zones"
         ).fetchall())
+        normal = _climate_normal(con, now.timetuple().tm_yday)
     finally:
         con.close()
 
     propensity_model = fit_propensity(category_counts, populations)
 
-    return apply_to_cohort([
+    return apply_climate(apply_to_cohort([
         _to_evidence(row, now, feed_health, propensity_model.get(row[0]))
         for row in rows
-    ])
+    ]), normal)
+
+
+def _climate_normal(con, day_of_year: int) -> dict | None:
+    try:
+        row = con.execute(
+            "SELECT mean_max_f, stdev_f, samples FROM climate_normals "
+            "WHERE day_of_year = ?", [day_of_year]).fetchone()
+    except Exception:  # noqa: BLE001 - an older store simply lacks the table
+        return None
+    if not row:
+        return None
+    return {"mean_max_f": row[0], "stdev_f": row[1], "samples": row[2]}
 
 
 def _to_evidence(
