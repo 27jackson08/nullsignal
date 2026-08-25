@@ -7,15 +7,29 @@ import { createHatchPattern } from "../../lib/hatch";
 import { colourToIndex, indexToColour } from "../../lib/pickIndex";
 import { STATE_META } from "../../lib/states";
 import type { ZoneCollection, ZoneProperties } from "../../lib/api";
+import type { TickView, Truth } from "../../lib/playback";
 import "./zone-map.css";
 
-export type ViewMode = "nullsignal" | "baseline" | "disagreement";
+export type ViewMode = "nullsignal" | "baseline" | "disagreement" | "truth";
+
+/** Ground truth is coloured on its own scale, not the decision palette.
+ *  Truth is what *is*; the four decision states are what a system was willing
+ *  to say. Sharing a palette between them would blur exactly the distinction
+ *  the scenario exists to draw. */
+const TRUTH_FILL: Record<Truth, string> = {
+  normal: "#1D2530",
+  heat: "#8A6A1F",
+  heat_stranded: "#B33A31",
+  local_fault: "#2F4A63",
+};
 
 interface ZoneMapProps {
   zones: ZoneCollection;
   mode: ViewMode;
   selectedGeoid: string | null;
   onSelect: (geoid: string | null) => void;
+  /** When a scenario is playing, states come from the tick rather than live. */
+  view?: TickView | null;
 }
 
 const ZOOM_RANGE: [number, number] = [1, 40];
@@ -27,7 +41,29 @@ const PADDING = 8;
 /** Hue encodes the risk estimate and never encodes sufficiency -- that is the
  *  hatch pass's job. Merging the channels would rebuild the single
  *  green-to-red ramp this product exists to replace. */
-function fillFor(properties: ZoneProperties, mode: ViewMode): string {
+function fillFor(
+  properties: ZoneProperties,
+  mode: ViewMode,
+  view?: TickView | null,
+): string {
+  if (view) {
+    const ours = view.stateFor(properties.geoid);
+    const theirs = view.baselineStateFor(properties.geoid);
+    if (mode === "truth") {
+      const truth = view.truthFor(properties.geoid);
+      return truth ? TRUTH_FILL[truth] : AGREEMENT_FILL;
+    }
+    if (mode === "disagreement") {
+      if (theirs === "CONFIRMED_LOW" && ours !== "CONFIRMED_LOW") {
+        return STATE_META.CONFIRMED_HIGH.color;
+      }
+      return ours !== theirs ? STATE_META.SUSPECTED.color : AGREEMENT_FILL;
+    }
+    const state = mode === "baseline" ? theirs : ours;
+    return state ? STATE_META[state].color : AGREEMENT_FILL;
+  }
+
+  if (mode === "truth") return AGREEMENT_FILL;
   if (mode === "disagreement") {
     const baselineReassures = properties.baseline_state === "CONFIRMED_LOW";
     if (baselineReassures && properties.state !== "CONFIRMED_LOW") {
@@ -39,13 +75,23 @@ function fillFor(properties: ZoneProperties, mode: ViewMode): string {
   return STATE_META[state]?.color ?? AGREEMENT_FILL;
 }
 
-function isHatched(properties: ZoneProperties, mode: ViewMode): boolean {
-  if (mode === "disagreement") return false;
+function isHatched(
+  properties: ZoneProperties,
+  mode: ViewMode,
+  view?: TickView | null,
+): boolean {
+  if (mode === "disagreement" || mode === "truth") return false;
+  if (view) {
+    const state = mode === "baseline"
+      ? view.baselineStateFor(properties.geoid)
+      : view.stateFor(properties.geoid);
+    return state ? STATE_META[state].hatched : false;
+  }
   const state = mode === "baseline" ? properties.baseline_state : properties.state;
   return STATE_META[state]?.hatched ?? false;
 }
 
-export function ZoneMap({ zones, mode, selectedGeoid, onSelect }: ZoneMapProps) {
+export function ZoneMap({ zones, mode, selectedGeoid, onSelect, view }: ZoneMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const pickCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -132,14 +178,14 @@ export function ZoneMap({ zones, mode, selectedGeoid, onSelect }: ZoneMapProps) 
       zones.features.forEach((feature) => {
         ctx.beginPath();
         toPath(feature);
-        ctx.fillStyle = fillFor(feature.properties, mode);
+        ctx.fillStyle = fillFor(feature.properties, mode, view);
         ctx.fill();
         ctx.stroke();
       });
 
       // Pass 2: texture, clipped to low-sufficiency tracts and drawn in screen
       // space so the hatch stays a constant size as you zoom.
-      const hatched = zones.features.filter((f) => isHatched(f.properties, mode));
+      const hatched = zones.features.filter((f) => isHatched(f.properties, mode, view));
       if (hatched.length) {
         ctx.save();
         ctx.beginPath();
@@ -171,7 +217,7 @@ export function ZoneMap({ zones, mode, selectedGeoid, onSelect }: ZoneMapProps) 
 
       ctx.restore();
     }
-  }, [zones, projection, mode, transform, size, hoveredIndex, selectedIndex]);
+  }, [zones, projection, mode, transform, size, hoveredIndex, selectedIndex, view]);
 
   // --- hit-test buffer ------------------------------------------------------
   // Redrawn only when geometry or viewport changes, never on hover.
@@ -254,7 +300,10 @@ export function ZoneMap({ zones, mode, selectedGeoid, onSelect }: ZoneMapProps) 
         <p className="zone-hover" aria-hidden="true">
           <span className="hover-name">{hovered.name}</span>
           <span className="hover-state">
-            {STATE_META[hovered.state]?.label ?? hovered.state}
+            {(() => {
+              const state = view ? view.stateFor(hovered.geoid) : hovered.state;
+              return state ? STATE_META[state].label : hovered.state;
+            })()}
           </span>
         </p>
       )}

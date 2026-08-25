@@ -23,6 +23,7 @@ body {
   grid-template-rows: var(--header-height) 1fr;
   height: 100%;
 }
+.app-shell.has-timeline { grid-template-rows: var(--header-height) 1fr auto; }
 
 .app-body {
   position: relative;

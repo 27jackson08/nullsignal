@@ -6,16 +6,26 @@ interface AppHeaderProps {
   summary: Summary | null;
   mode: ViewMode;
   onModeChange: (mode: ViewMode) => void;
+  scenarios: { name: string; description: string }[];
+  activeScenario: string | null;
+  onLoadScenario: (name: string) => void;
 }
 
-const MODES: { id: ViewMode; label: string; hint: string }[] = [
+const MODES: { id: ViewMode; label: string; hint: string; scenarioOnly?: boolean }[] = [
   { id: "nullsignal", label: "NullSignal", hint: "Risk and sufficiency as separate channels" },
   { id: "baseline", label: "Baseline", hint: "A conventional threshold dashboard" },
   { id: "disagreement", label: "Disagreement", hint: "Where the two engines differ" },
+  // Ground truth exists only inside a scenario, because only there does anyone
+  // know it. Offering it on live data would be a lie about what we can see.
+  { id: "truth", label: "Ground truth", hint: "What was actually happening",
+    scenarioOnly: true },
 ];
 
-export function AppHeader({ summary, mode, onModeChange }: AppHeaderProps) {
+export function AppHeader({
+  summary, mode, onModeChange, scenarios, activeScenario, onLoadScenario,
+}: AppHeaderProps) {
   const overclaimed = summary?.reassured_by_baseline_only ?? 0;
+  const modes = MODES.filter((m) => !m.scenarioOnly || activeScenario);
 
   return (
     <header className="app-header">
@@ -30,8 +40,23 @@ export function AppHeader({ summary, mode, onModeChange }: AppHeaderProps) {
         <span className="denom numeric">of {summary?.zone_count ?? 0} tracts</span>
       </div>
 
+      {scenarios.length > 0 && (
+        <label className="scenario-picker">
+          <span className="label">Scenario</span>
+          <select
+            value={activeScenario ?? ""}
+            onChange={(event) => onLoadScenario(event.target.value)}
+          >
+            <option value="">Live data</option>
+            {scenarios.map((s) => (
+              <option key={s.name} value={s.name}>{s.name}</option>
+            ))}
+          </select>
+        </label>
+      )}
+
       <nav className="mode-switch" aria-label="Map view">
-        {MODES.map(({ id, label, hint }) => (
+        {modes.map(({ id, label, hint }) => (
           <button
             key={id}
             type="button"

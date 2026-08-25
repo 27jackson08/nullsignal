@@ -1,10 +1,12 @@
 import { useZoneDetail } from "../../hooks/useZoneDetail";
 import { STATE_META, isReassuring } from "../../lib/states";
 import { MeterRow } from "./MeterRow";
+import { VerificationQueue } from "../queue/VerificationQueue";
 import "./evidence-panel.css";
 
 interface EvidencePanelProps {
   geoid: string | null;
+  onSelect: (geoid: string) => void;
 }
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -50,7 +52,7 @@ function describeReporting(index: number): string {
   return "This tract reports at about the typical rate.";
 }
 
-export function EvidencePanel({ geoid }: EvidencePanelProps) {
+export function EvidencePanel({ geoid, onSelect }: EvidencePanelProps) {
   const { detail, error } = useZoneDetail(geoid);
 
   if (error) {
@@ -66,6 +68,7 @@ export function EvidencePanel({ geoid }: EvidencePanelProps) {
             Pick a tract to see what the engine knows, what it doesn&rsquo;t, and
             why that distinction changed the verdict.
           </p>
+          <VerificationQueue onSelect={onSelect} />
         </div>
       </section>
     );

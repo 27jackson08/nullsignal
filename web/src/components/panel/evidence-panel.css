@@ -97,7 +97,7 @@
 .facts dt { color: var(--ink-dim); }
 .facts dd { margin: 0; font-family: var(--font-mono); font-size: .78rem; }
 
-.panel-empty { margin: auto 0; color: var(--ink-dim); }
+.panel-empty { color: var(--ink-dim); }
 .panel-empty p:last-child {
   margin: var(--space-3) 0 0;
   font-size: .88rem;

@@ -122,3 +122,31 @@ export const fetchZones = () =>
 export const fetchSummary = () => getJson<Summary>("/api/summary");
 export const fetchZoneDetail = (geoid: string) =>
   getJson<ZoneDetail>(`/api/zones/${geoid}`);
+
+export interface ScenarioSummary {
+  name: string;
+  description: string;
+  duration_hours: number;
+  event_count: number;
+}
+
+export const fetchScenarios = () =>
+  getJson<{ scenarios: ScenarioSummary[] }>("/api/scenarios").then((r) => r.scenarios);
+
+export interface QueueEntry {
+  geoid: string;
+  name: string;
+  borough: string;
+  population: number;
+  state: DecisionState;
+  unresolved_harm: number;
+  residents_at_stake: number;
+  risk: number;
+  sufficiency: number;
+  decision: string;
+  next_check: string | null;
+  next_check_minutes: number | null;
+}
+
+export const fetchQueue = (limit = 8) =>
+  getJson<{ zones: QueueEntry[] }>(`/api/queue?limit=${limit}`).then((r) => r.zones);
