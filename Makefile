@@ -22,6 +22,9 @@ build:
 test:
 	uv run pytest -v
 
+coverage:
+	uv run pytest --cov=nullsignal --cov-report=term-missing
+
 # The root tsconfig is a project-references stub: `tsc --noEmit` against it
 # passes while the real build fails. Check the app project directly.
 check: test
