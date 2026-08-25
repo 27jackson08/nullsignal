@@ -248,6 +248,22 @@ export function EvidencePanel({ geoid, onSelect }: EvidencePanelProps) {
             </dd>
           </div>
           <div>
+            <dt>Heat relief reachable</dt>
+            <dd className="numeric">
+              {detail.heat_relief.reachable !== null
+                ? `${Math.round(detail.heat_relief.reachable * 100)}% of tract`
+                : "unknown"}
+            </dd>
+          </div>
+          {(detail.heat_relief.overstated ?? 0) > 0.05 && (
+            <div>
+              <dt>&hellip; listed but not working</dt>
+              <dd className="numeric overstated">
+                {Math.round((detail.heat_relief.overstated ?? 0) * 100)}%
+              </dd>
+            </div>
+          )}
+          <div>
             <dt>Vulnerability (SVI)</dt>
             <dd className="numeric">
               {vulnerability.svi_overall !== null

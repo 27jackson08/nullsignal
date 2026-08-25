@@ -62,6 +62,11 @@ export interface ZoneDetail {
     key: string; label: string; value: number; value_per_cost: number;
     cost: number; latency_minutes: number; detail: string;
   }[];
+  heat_relief: {
+    reachable: number | null;
+    listed: number | null;
+    overstated: number | null;
+  };
   vulnerability: {
     svi_overall: number | null;
     pct_no_vehicle: number | null;
