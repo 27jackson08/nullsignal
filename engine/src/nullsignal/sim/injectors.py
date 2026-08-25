@@ -40,9 +40,11 @@ class Injection:
     drift_f: float = 8.0         # SLOW_DRIFT: degrees per tick, away from truth
     latency_hours: float = 4.0   # LATENCY
     coverage: float = 0.25       # PARTIAL_COVERAGE: fraction still observable
+    borough: str | None = None   # scope the fault to one station, not the city
 
     def describe(self) -> str:
-        return f"{self.source}:{self.mode}"
+        scope = f"@{self.borough}" if self.borough else ""
+        return f"{self.source}:{self.mode}{scope}"
 
 
 def apply(
@@ -55,6 +57,11 @@ def apply(
     """Corrupt an evidence record according to every active injection."""
     corrupted = evidence
     for injection in injections:
+        # A calibration fault lives in one station. Applying it citywide models
+        # the worst case -- every source wrong the same way -- which no
+        # cross-source check can catch, by construction.
+        if injection.borough and injection.borough != evidence.zone.borough:
+            continue
         corrupted = _apply_one(corrupted, injection, last_good, ticks_active)
     return corrupted
 

@@ -1,0 +1,27 @@
+name: sensor-drift-single-station
+description: >
+  The realistic calibration fault. One borough's thermometer drifts cool while
+  the rest of the city reads true - a few degrees per hour, every reading
+  individually defensible, the payload changing and the clock advancing so no
+  liveness check fires.
+
+  Nothing is wrong with the feed. What is wrong is the sequence, and that is
+  only visible as disagreement with the stations around it. Contrast with
+  sensor-drift-masking-heat, where every station drifts together and there is
+  nothing left to disagree with.
+
+duration_hours: 12
+tick_hours: 1
+
+timeline:
+  - at_hour: 0
+    heat_index_f: 88
+  - at_hour: 3
+    heat_index_f: 96
+    note: genuinely hot now
+  - at_hour: 4
+    inject: {source: nws, mode: SLOW_DRIFT, drift_f: 3.0, borough: Bronx}
+    note: the Bronx thermometer begins reading cool, alone
+  - at_hour: 6
+    transit_disrupted: true
+    note: service stops while one station understates the heat

@@ -15,6 +15,7 @@ from ..inference import engine
 from ..inference.evidence import ZoneEvidence
 from ..inference.hypotheses import World
 from ..types import DecisionState
+from ..reliability.consistency import apply_to_cohort
 from . import injectors
 from .scenario import Scenario, WorldState, is_harmful, true_world
 
@@ -88,6 +89,11 @@ def run(scenario: Scenario, base_evidence: list[ZoneEvidence]) -> RunResult:
             )
             last_good[item.zone.geoid] = faithful
             observed.append((truth, corrupted))
+
+        # Cross-station agreement is a relation across the cohort, so it is
+        # applied here rather than inside the per-zone assessment.
+        checked = apply_to_cohort([e for _, e in observed])
+        observed = list(zip((t for t, _ in observed), checked))
 
         thresholds = baseline.calibrate([e for _, e in observed])
         faults = tuple(sorted(state.active))
