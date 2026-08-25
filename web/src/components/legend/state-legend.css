@@ -3,6 +3,7 @@
   left: var(--space-4);
   bottom: var(--space-4);
   width: 15.5rem;
+  max-width: calc(100vw - 2 * var(--space-4));
   padding: var(--space-4);
   background: color-mix(in oklab, var(--surface) 92%, transparent);
   border: 1px solid var(--rule);

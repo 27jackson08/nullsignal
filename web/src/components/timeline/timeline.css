@@ -88,4 +88,9 @@
 }
 .event-note { color: var(--ink-dim); font-style: italic; }
 
-@media (max-width: 900px) { .event-note { display: none; } }
+@media (max-width: 900px) {
+  .event-note { display: none; }
+  .timeline { padding: var(--space-3) var(--space-4) var(--space-4); }
+  .timeline header { flex-wrap: wrap; gap: var(--space-2); }
+  .readout { font-size: .74rem; }
+}

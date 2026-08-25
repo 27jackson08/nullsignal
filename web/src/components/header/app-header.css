@@ -64,6 +64,9 @@
 
 @media (max-width: 900px) {
   .headline-stat { display: none; }
+  .app-header { padding: 0 var(--space-3); gap: var(--space-3); }
+  .brand .tagline { display: none; }
+  .mode-switch button { padding: .5rem .6rem; font-size: .64rem; }
 }
 
 .scenario-picker { display: flex; flex-direction: column; gap: .2rem; }

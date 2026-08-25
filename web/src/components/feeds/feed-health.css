@@ -3,11 +3,18 @@
   right: var(--space-4);
   top: var(--space-4);
   width: 15rem;
+  /* Absolutely positioned, so a fixed width overflows the viewport on a phone
+     rather than reflowing. The expanded state is 25rem, which is wider than a
+     320px screen. */
+  max-width: calc(100vw - 2 * var(--space-4));
   background: color-mix(in oklab, var(--surface) 94%, transparent);
   border: 1px solid var(--rule);
   backdrop-filter: blur(8px);
 }
-.feed-health.is-expanded { width: 25rem; }
+.feed-health.is-expanded {
+  width: 25rem;
+  max-width: calc(100vw - 2 * var(--space-4));
+}
 
 .feed-health > button {
   display: flex;
@@ -94,3 +101,7 @@
   line-height: 1.5;
   color: var(--ink-dim);
 }
+
+/* Supplementary on a phone: the map and the verdict come first, and this panel
+   would cover most of both. Feed faults still surface in the evidence panel. */
+@media (max-width: 900px) { .feed-health { display: none; } }
