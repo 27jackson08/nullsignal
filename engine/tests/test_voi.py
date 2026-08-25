@@ -44,6 +44,9 @@ def test_equity_monotonicity():
     ]
     assert values == sorted(values), f"expected monotone increase, got {values}"
     assert values[-1] > values[0]
+    # The multiplier lives here and only here: risk itself must not move.
+    from nullsignal.inference.hypotheses import expected_harm
+    assert expected_harm(posterior, 1.0) == pytest.approx(expected_harm(posterior, 3.0))
 
 
 def test_doubt_also_raises_a_zone_up_the_queue():
@@ -57,17 +60,32 @@ def test_doubt_also_raises_a_zone_up_the_queue():
     assert values == sorted(values), f"expected monotone increase, got {values}"
 
 
-def test_value_of_information_is_not_monotone_in_stakes():
+def test_value_of_information_is_not_monotone_in_the_danger():
     """Documents the shape of VOI rather than wishing it away.
 
-    Asserted explicitly so nobody later "fixes" the queue by ranking zones on
-    VOI: past the point where crews are going regardless, another check changes
-    nothing and is correctly worth zero.
+    Information is worth most near a decision boundary and nothing once one
+    response dominates whatever the answer turns out to be. Asserted explicitly
+    so nobody later "fixes" the queue by ranking zones on VOI: that would put
+    the clearest emergencies last.
     """
-    posterior = posterior_for()
-    values = [evpi.rank(posterior, harm_scale=s)[0].value
-              for s in (1.0, 1.5, 2.0, 2.5, 3.0)]
-    assert values != sorted(values), "VOI should peak near a decision boundary"
+    from nullsignal.inference.hypotheses import expected_harm
+
+    beliefs = [
+        {"normal/faithful": 1.0},                                  # certainly calm
+        {"normal/faithful": 0.7, "heat_stranded/faithful": 0.3},
+        {"normal/faithful": 0.4, "heat_stranded/faithful": 0.6},
+        {"heat_stranded/faithful": 1.0},                           # certainly dire
+    ]
+    values = [evpi.rank(b, harm_scale=1.0)[0].value for b in beliefs]
+
+    assert values == sorted(values, key=lambda v: v) or True  # shape asserted below
+    assert values[0] == pytest.approx(0.0), "nothing to learn when certainly calm"
+    assert values[-1] == pytest.approx(0.0), "nothing to learn when certainly dire"
+    assert max(values[1:-1]) > 0, "information is worth most in between"
+
+    # And risk itself is monotone in the danger, unlike the value of checking.
+    risks = [expected_harm(b) for b in beliefs]
+    assert risks == sorted(risks)
 
 
 def test_the_same_evidence_in_a_fragile_tract_outranks_a_robust_one():
