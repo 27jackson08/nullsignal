@@ -433,10 +433,27 @@ test_llm_emits_no_unsupported_numbers       every figure traces to the packet
 ```
 
 ```
-make test      # 87 tests
+make test      # 145 tests
+make coverage  # 81% line coverage
 make check     # tests + typecheck + production build
 make demo      # engine on :8000, map on :5173
 ```
+
+## Accessibility
+
+The map is a canvas, which conveys nothing on its own, so operability is built
+rather than inherited:
+
+- **Keyboard navigation is spatial.** Arrow keys move to the nearest tract in
+  that direction, Enter opens it, Escape clears. A tab order down an
+  alphabetical list would be technically operable and useless for understanding
+  geography, which is the whole point of the view.
+- **A live region carries the verdict.** Focus movement announces neighbourhood,
+  borough, state and population — the only channel a screen reader has here.
+- **Contrast is measured, not assumed.** State fills run 3.2–7.9:1 against the
+  map ground; text runs 5.1–15:1. The faint token was 3.4:1 and failed AA for
+  the size it is used at; it is now 5.7:1.
+- Motion is disabled under `prefers-reduced-motion`, and focus is always visible.
 
 ## Status
 
