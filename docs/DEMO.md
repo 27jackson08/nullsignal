@@ -3,15 +3,25 @@
 Ninety seconds, five moves. Every number below is reproducible from the
 committed snapshot; nothing is staged.
 
-Rehearsed against the production build on 2026-08-25. The baseline legend at
-t+7h and at t+9h is byte-identical — 2,097 confirmed low, 228 confirmed high,
-0 unknown — so it demonstrably never moves through the freeze *or* the harm.
+Rehearsed against the production build on 2026-08-26. The baseline is a
+working dashboard, not a prop: at t+9h it correctly escalates from 229 alerting
+tracts to 749 when service actually stops. Then 311 reporting collapses, and by
+t+13h it is alerting on **zero** — it stands down to all-clear at the moment the
+emergency peaks. Say that out loud; it is the strongest thing in the demo.
 
 ## Before you start
+
+Either open the deployed build —
+**<https://27jackson08.github.io/nullsignal/>** — which needs nothing running,
+or serve it locally:
 
 ```bash
 make demo        # engine on :8000, map on :5173
 ```
+
+The two are the same build against the same snapshot. Use the local one if the
+venue's network is unreliable; use the deployed one if you would rather not
+have a terminal on screen.
 
 Wait for the map to render (2,325 tracts, ~2s). Leave the browser on
 **NullSignal** view, live data. Have a second terminal ready.
@@ -63,7 +73,8 @@ The map goes heavily hatched — **1,228 tracts**.
 > "The feed is still returning HTTP 200. Correct content type. A hundred
 > kilobytes of plausible protobuf saying service is normal. Nothing is down."
 
-Switch to **Baseline**. Nothing changes: **2,097 confirmed low, 0 unknown**.
+Switch to **Baseline**. Nothing changes: **229 alerting, 2,096 called low**,
+exactly as at t+0h.
 
 > "That's the same moment on a conventional dashboard. It cannot see this,
 > because there is nothing to see. Every threshold it monitors is satisfied."
@@ -84,9 +95,27 @@ Switch to **Ground truth**. Red appears across the transit-dependent tracts.
 > that's survivable only if you can leave it, with no way to reach a cooling
 > centre."
 
-Switch to **Baseline** once more. Still green.
+Switch to **Baseline** once more. It has **escalated — 749 alerting**.
 
-> "Two hours after we flagged it. Still green."
+> "And give it credit: it works. Service stopped, people called 311, and the
+> dashboard caught the surge. This is not a straw man."
+
+Now scrub forward to **t+10h**:
+
+> *"reporting collapses in the affected tracts"*
+
+The baseline falls to **6 alerting**. Keep scrubbing to **t+13h**: **zero**.
+
+> "Nothing got better. The heat is still there, the trains are still stopped,
+> the people are still stranded. What changed is that they stopped calling —
+> and the dashboard read the silence as the emergency resolving. It escalated
+> correctly, then stood all the way down to all-clear at the worst moment of
+> the day."
+
+Switch back to **NullSignal** for the same tick: **1,486 unknown**, and rising.
+
+> "We go the other way. Less certain, not more — because losing the evidence is
+> a reason to doubt the all-clear, not to issue one."
 
 ---
 
@@ -100,17 +129,17 @@ uv run nullsignal eval
 
 | | False reassurance | Residents | Warning |
 | --- | --- | --- | --- |
-| Conventional dashboard | **83.1%** | 3,889,567 | 0h |
+| Conventional dashboard | **83.9%** | 5,030,204 | 0h |
 | NullSignal | **0.0%** | 0 | **2h** |
 
 > "Of the tracts where people were genuinely in danger, the dashboard called
-> 83% of them safe — 3.9 million residents. We called none of them safe. And we
-> reacted two hours before the harm, when the feed froze, not when people got
-> hurt."
+> 84% of them safe — five million residents. We called none of them safe. And
+> we reacted two hours before the harm, when the feed froze, not when people
+> got hurt."
 
 Then the line that matters:
 
-> "**50.7% of the residents that dashboard kept calling safe are in the most
+> "**54.5% of the residents that dashboard kept calling safe are in the most
 > vulnerable fifth of the city — against 40.2% citywide.** It isn't that
 > vulnerable neighbourhoods are less visible on average. It's that where the
 > system goes blind, it goes blind about the people who can least afford it."
@@ -136,10 +165,13 @@ uv run nullsignal eval --scenario sensor-drift-masking-heat
 ## Questions you will get
 
 **"Isn't this just crying wolf?"**
-False-alarm rate is on the scoreboard: 24.3% against the baseline's 8.7% — that
-is the cost, and it is reported rather than buried. Two of five scenarios also
-show the *baseline* scoring zero false reassurance purely by alarming 60–65% of
-the time, and the tool flags those as stopped clocks rather than claiming a win.
+No — and the scoreboard keeps the two apart on purpose. On the canonical
+scenario NullSignal's false-alarm rate is **0.0%**: it never once claimed danger
+where nothing was wrong. What it does do is decline to certify safety 25.9% of
+the time, which is a different act and is reported in its own column rather than
+folded into the same number. Three of the twelve scenarios also show the
+*baseline* scoring zero false reassurance purely by alarming 50–64% of the time,
+and the tool flags those as stopped clocks rather than claiming a win.
 
 **"Does the AI decide anything?"**
 No. The language model never sees a risk score or a decision state, and it

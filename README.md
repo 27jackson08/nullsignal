@@ -5,6 +5,13 @@
 Most monitoring systems encode *no data* as *no problem*. NullSignal makes
 "we don't know" a first-class state that "low risk" cannot collapse into.
 
+**[Open the live map →](https://27jackson08.github.io/nullsignal/)**
+
+No install, no backend. The published site is the same build a local clone
+produces: every response is baked from the snapshot committed in `data/raw`, so
+what you click is exactly what `make demo` serves. Start on **Live data**, then
+load the `heatwave-transit-silent-failure` scenario and open **Result**.
+
 ## The 2x2
 
 |                      | Sufficiency low | Sufficiency high |
@@ -200,53 +207,70 @@ collapses. No single reading crosses a threshold; the danger is the combination.
 
 | engine | false reassurance | residents | false alarm | warning |
 | --- | --- | --- | --- | --- |
-| baseline | **83.1%** | 3,889,567 | 8.7% | 0h |
-| NullSignal | **0.0%** | 0 | 23.8% | **2h** |
+| baseline | **83.9%** | 5,030,204 | 6.9% | 0h |
+| NullSignal | **0.0%** | 0 | 0.0% | **2h** |
 
-> **50.7%** of the residents the conventional dashboard kept calling safe are in
-> the most vulnerable quintile, against **40.2%** citywide — **1.26x**.
+> **54.5%** of the residents the conventional dashboard kept calling safe are in
+> the most vulnerable quintile, against **40.2%** citywide — **1.36x**.
 
 The two hours are the point: NullSignal stops confirming safety when the feed
 freezes, not when the harm arrives. It knows it has gone blind before there is
 anything to see.
 
+The baseline is not asleep through this. At t+9h, when service actually stops
+and residents call 311, it correctly escalates from 229 alerting tracts to 749.
+Then reporting collapses in exactly those tracts, and it falls to 6 alerting,
+then to **zero by t+13h** — declaring the whole city clear at the worst hour of
+the day. It did not fail to notice the emergency. It noticed, and then read the
+disappearance of the evidence as the emergency ending.
+
 ### Across twelve scenarios
 
-| Scenario | Baseline FR / FA | NullSignal FR / FA |
-| --- | --- | --- |
-| all-clear (control, nothing wrong) | 0.0% / 9.8% | **0.0% / 0.0%** |
-| heatwave, silent transit failure | 83.1% / 8.7% | **0.0% / 0.0%** |
-| honest outage | 83.1% / 8.2% | **0.0% / 0.0%** |
-| compound failure (three at once) | 83.1% / 7.3% | **0.0% / 0.0%** |
-| delayed transit feed | 0.0% / 62.4% * | **0.0% / 0.0%** |
-| flatlined feed | 0.0% / 57.3% * | **0.0% / 0.0%** |
-| partial sensor coverage | 0.0% / 64.2% * | **0.0% / 0.0%** |
-| sensor drift, one station | 15.2% / 65.0% * | **2.8% / 5.1%** |
-| slow burn (no fault at all) | 0.0% / 50.6% * | **3.1% / 4.7%** |
-| reporting collapse | 0.0% / 60.3% * | **5.3% / 12.8%** |
-| contradicting transit feed | 0.0% / 64.2% * | 92.3% / 4.7% |
-| sensor drift, every station | 83.1% / 16.7% | 92.3% / 0.0% |
+| Scenario | Baseline FR / FA | NullSignal FR / FA | |
+| --- | --- | --- | --- |
+| compound failure (three at once) | 92.9% / 6.4% | **0.0% / 0.0%** | win |
+| heatwave, silent transit failure | 83.9% / 6.9% | **0.0% / 0.0%** | win |
+| honest outage | 37.1% / 8.2% | **0.0% / 0.0%** | win |
+| all-clear (control, nothing wrong) | 0.0% / 9.8% | **0.0% / 0.0%** | win |
+| sensor drift, one station | 4.2% / 65.0% \* | **2.8% / 5.1%** | win |
+| delayed transit feed | 0.0% / 62.4% \* | **0.0% / 0.0%** | \* |
+| flatlined feed | 0.0% / 57.3% \* | **0.0% / 0.0%** | \* |
+| partial sensor coverage | 0.0% / 64.2% \* | **0.0% / 0.0%** | \* |
+| slow burn (no fault at all) | 0.0% / 50.6% \* | 3.1% / 4.7% | \* |
+| reporting collapse | 0.0% / 60.4% \* | 5.3% / 12.8% | \* |
+| contradicting transit feed | 0.0% / 64.2% \* | 92.3% / 4.7% | \* |
+| sensor drift, every station | 37.1% / 16.7% | 92.3% / 0.0% | **beaten** |
 
 \* Stopped clocks — a 0% false-reassurance rate bought by claiming danger 50–65%
 of the time. The tool flags these rather than letting the comparison stand.
 
-**Ten of twelve are wins.** Notably `all-clear` (a calm city, no fault) and
-`slow-burn` (real danger, no fault at all) — an engine that only reacts to
-broken feeds, or that cannot stay quiet, has learned the wrong lesson.
+Counted honestly: **five clear wins**, including `all-clear` (a calm city, no
+fault) and `sensor-drift-single-station`, where NullSignal is better on *both*
+columns at once. Six are stopped clocks, where the baseline's zero is not worth
+having. **One is a straight loss, and it is the interesting one.**
 
-### The two losses share one cause
+### The loss
 
-Both are a **single source lying convincingly with no second source of the same
-kind**. A contradicting transit feed changes its payload, advances its clock,
-and reports the opposite of the truth; a citywide sensor drift moves every
-thermometer together and gradually, so the reading stays plausible through most
-of the harm window.
+`sensor-drift-masking-heat` moves every thermometer in the city together and
+gradually, so the reading stays plausible through most of the harm window. It
+defeats every liveness detector by construction — the payload changes, the clock
+advances, each individual reading is defensible — and with one weather source
+per borough there is no second source of the same kind to disagree with it. A
+**sole witness lying well**. NullSignal falsely reassures on 92.3% of endangered tracts; the
+baseline, on 37.1%.
 
-Every failure with a second opinion available is caught — a frozen feed, a
-stale feed, a partial feed, one drifting station, three faults at once. What is
-not caught is a sole witness lying well. The named fix is cross-feed content
+`contradicting-transit-feed` is the same shape: a feed that changes its payload,
+advances its clock, and reports the opposite of the truth. The baseline's 0%
+there is a stopped clock (64.2% false alarm), so it is not a loss on the
+scoreboard — but NullSignal is still fooled, and that is worth saying plainly.
+
+Every failure with a second opinion available is caught — a frozen feed, a stale
+feed, a partial feed, one drifting station, three faults at once. What is not
+caught is a sole witness lying well. The named fix is cross-feed content
 agreement across the seven MTA subway feeds, the transit equivalent of the
-cross-station weather check, and it is not built.
+cross-station weather check, and **it is not built**. The scenarios are left in
+the suite, and a test asserts the limit, so its absence cannot be mistaken for
+a fix.
 
 ### Two different failures, two different columns
 
@@ -258,11 +282,11 @@ exactly right.
 Saying "we cannot confirm this is safe" asserts nothing about danger. It is the
 behaviour this system exists to produce, and counting it as crying wolf made
 honesty look like noise. Separated, NullSignal claims danger falsely **0.0%**
-of the time on the canonical scenario; the baseline does so 8.7% of the time
+of the time on the canonical scenario; the baseline does so 6.9% of the time
 and structurally cannot report an unresolved case at all.
 
-Two of the baseline's figures are stopped clocks — its 0% false reassurance on
-reporting collapse is bought by alarming 60% of the time — and the tool flags
+Six of the baseline's figures are stopped clocks — its 0% false reassurance on
+reporting collapse is bought by alarming 60.4% of the time — and the tool flags
 those rather than letting the comparison stand.
 
 ## Cross-source agreement
@@ -277,153 +301,6 @@ borough gridpoints normally agree closely — mean spread 1.9°F, 95th percentil
 3.0°F — so the outlier threshold sits at 5°F, above real weather variation
 across the city. A station several degrees from its peers loses reliability;
 one that agrees does not.
-
-## Reporting bias
-
-311 report counts are not incident counts. Propensity is estimated from the
-structure of *what* a tract reports, not how much:
-
-```
-log rate(zone, category) = alpha(category) + beta(zone) + delta(zone, category)
-```
-
-`beta` is the component common to every category, so a tract that reports
-unusually much across all of them is a high-propensity tract, while a spike
-confined to one category stays in the residual as hazard. Deliberately no
-vulnerability covariates: regressing reports on SVI would let the model absorb
-"more vulnerable means fewer reports" as an expected pattern and fit away the
-exact bias it exists to measure.
-
-The output feeds one thing — **what a tract's silence is worth**. South
-Williamsburg files 9 reports in 60 days for 5,991 residents (index 0.16), so its
-311 coverage drops to 0.11. Hearing nothing from it is close to no information.
-
-### What the data actually says
-
-Testing the premise honestly: **NYC 311 propensity does not fall with
-vulnerability.** It is flat across SVI quintiles (correlation +0.04), and
-composite evidence availability is *higher* for more vulnerable tracts, which
-are denser and better served by transit.
-
-The real finding is sharper:
-
-> **70.7% of residents in evidence blind spots are in the most vulnerable
-> quintile, against 24.3% citywide** — 2.9x over-representation.
-
-It is not that vulnerable neighbourhoods are systematically less visible. It is
-that where the system goes blind, it goes blind about the people who can least
-afford it: 207,067 residents, 146,376 of them in the top SVI quintile.
-
-## Contradictions
-
-Conflicts are never fused. Averaging "transit halted" with "transit normal"
-into "mildly degraded" would launder a crisis into a shrug. A contradiction
-lowers *sufficiency* and leaves the risk estimate untouched — a disagreement is
-not a measurement.
-
-The rule that earns the propensity model its keep: dangerous heat with falling
-complaint volume is a contradiction **only where silence is worth reading**.
-Two guards keep it informative:
-
-- **Tempo, not absolute rate.** Measured against a tract's own longer-run rate.
-  A fixed cut per 1,000 residents sits above or below almost the whole city, so
-  it fired on 94% of tracts — a contradiction that fires everywhere says nothing.
-- **Only tracts whose quiet is meaningful.** Where a tract barely reports at
-  all, quiet is the normal condition.
-
-At 83°F: 0 contradictions. Under a simulated 104°F: 425 tracts (18.3%).
-
-## Inference
-
-A hypothesis is a *pair*: what is happening, and whether we can see it.
-
-    hypothesis = (world state, observation regime)
-
-Four worlds x two regimes = eight hypotheses, so the posterior is computed by
-enumeration — exact, and every number traceable to a prior, a likelihood entry
-and a reliability score.
-
-Splitting the pair is the point. A conventional system reasons only over world
-states, so it has no way to represent "this may be bad *and* my feeds may be
-lying about it" and can never conclude it might be blind. Here
-`(heat_stranded, blind)` is a cell the engine can raise probability on.
-
-Two mechanics carry it:
-
-- **A blind regime makes the instruments agree with nothing.** A frozen feed
-  does not emit noise, it replays its last good state — so P(see "normal" |
-  transit failed, blind) is *high*. That asymmetry is what a threshold on the
-  feed's own values can never reach.
-- **Unreliable evidence cannot move the posterior.** Each likelihood is mixed
-  toward uniform in proportion to that source's reliability, so as it goes to
-  zero the observation stops discriminating. Missing data does not push toward
-  safe; it does not push at all. Asserted as an invariant: KL(posterior ‖ prior)
-  decays monotonically to zero.
-
-The regime is scoped to the mobility channel. Modelled globally, a dead subway
-feed also discredited the forecast, and risk *fell* as the engine went blind.
-
-## Deciding what to check next
-
-Exact EVPI over five concrete checks and three responses — small enough to
-enumerate, so every ranking is reproducible.
-
-**VOI answers "which check", not "which zone".** It is deliberately not
-monotone in stakes: information is worth most near a decision boundary and
-nothing once one response dominates whatever the answer is. Ranking zones by
-VOI would put the clearest emergencies last.
-
-Zones are queued by **unresolved harm** — believed harm weighted by remaining
-doubt — which *is* monotone in both vulnerability and uncertainty. That is
-where equity enters the ordering, structurally rather than as a reweighting,
-and it is asserted as an invariant.
-
-Response costs are derived from the risk thresholds rather than hand-set, so a
-tract can never read "confirmed low" beside advice to send crews.
-
-## The scoreboard
-
-```bash
-uv run nullsignal eval                    # canonical scenario, ~7s
-uv run nullsignal eval --list             # all scenarios
-```
-
-Both engines see identical corrupted evidence; neither sees ground truth. The
-scenario holds *what is true* and *what breaks in our ability to see it* apart,
-which is what makes a run a measurement rather than a demonstration.
-
-**heatwave-transit-silent-failure** — heat reaches the low nineties, below any
-advisory threshold. The transit feed freezes (HTTP 200, plausible payload,
-normal service). Two hours later service actually stops and 311 reporting
-collapses. No single reading crosses a threshold; the danger is the combination.
-
-| engine | false reassurance | residents | false alarm | warning |
-| --- | --- | --- | --- | --- |
-| baseline | **83.1%** | 3,889,567 | 8.7% | 0h |
-| NullSignal | **0.0%** | 0 | 23.8% | **2h** |
-
-> **50.7%** of the residents the conventional dashboard kept calling safe are in
-> the most vulnerable quintile, against **40.2%** citywide — **1.26x**.
-
-The two hours are the point: NullSignal stops confirming safety when the feed
-freezes, not when the harm arrives. It knows it has gone blind before there is
-anything to see.
-
-### Where it loses
-
-A scoreboard that only shows wins is a slide. Two of four scenarios are
-uncomfortable, and the tool says so in its own output:
-
-- **sensor-drift-masking-heat** — *NullSignal is beaten, 96.6% against 83.1%.*
-  A thermometer drifting a few degrees per hour defeats every liveness
-  detector by construction: the payload changes, the clock advances, each
-  reading is defensible. With one weather source per borough there is no
-  redundancy to catch it. The fix is cross-source disagreement, not another
-  detector.
-- **reporting-collapse** — the baseline scores 0% false reassurance by alarming
-  60% of the time when nothing is wrong. A stopped clock. NullSignal takes
-  31.4% against a 15.4% false-alarm rate; the report flags the comparison
-  rather than claiming the win.
 
 ## Explanation
 
@@ -577,14 +454,14 @@ The offline claim is tested, not asserted. A fresh clone with no network:
 ```
 git clone … && uv venv && uv pip install -e ".[dev]"
 uv run nullsignal build     # 4.5s, 155 files, 28MB, committed data only
-uv run pytest               # 164 passed
+uv run pytest               # 170 passed
 uv run nullsignal eval      # identical to the working directory
 ```
 
 The scoreboard is anchored to when the snapshot was taken, not to when the
 evaluation runs. Without that it drifted as the fixtures aged — 311 freshness
-decays against wall clock, so the unresolved rate crept from 24.7% to 27.0% at
-a week and 28.0% at a month. A number that changes depending on the calendar is
+decays against wall clock, so the unresolved rate crept by more than three
+points at a week and four at a month. A number that changes depending on the calendar is
 an anecdote, so it is now a property of the scenario and the snapshot alone.
 
 This caught a real bug that a working directory hides. The weather join
