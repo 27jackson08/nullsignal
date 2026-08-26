@@ -40,6 +40,7 @@ class EngineState:
     detail: dict[str, dict]
     summary: dict
     queue: list[dict]
+    briefing: dict = field(default_factory=dict)
     evidence: list = field(default_factory=list)
     playback_cache: dict = field(default_factory=dict)
     explanations: ExplanationCache = field(default_factory=ExplanationCache)
@@ -107,6 +108,32 @@ def _rebuild() -> None:
     state.evidence = evidence
     state.playback_cache = {}
     state.summary = _summary(assessed, feed_health)
+
+    from ..eval.report import snapshot_taken_at
+    from ..findings.briefing import build as build_briefing
+    taken = snapshot_taken_at(RAW_DIR, DB_PATH)
+    state.briefing = build_briefing(
+        [(item, ours) for item, ours, _ in assessed],
+        issued_at=None if taken is None else taken.isoformat(),
+        top_quintile=_vulnerability_quintile(evidence),
+    ).as_dict()
+
+
+def _vulnerability_quintile(evidence) -> float | None:
+    """The 80th percentile of tract vulnerability, over tracts that have one.
+
+    Suppressed tracts are excluded from the cut rather than treated as zero:
+    counting them as least-vulnerable would move the threshold and quietly
+    understate every share measured against it.
+    """
+    from statistics import quantiles
+    values = sorted(
+        item.zone.svi_overall for item in evidence
+        if item.zone.svi_overall is not None
+    )
+    if len(values) < 5:
+        return None
+    return quantiles(values, n=5, method="inclusive")[3]
 
 
 def _feature(item, ours: ZoneAssessment, theirs: ZoneAssessment, shape: dict) -> dict:
@@ -337,6 +364,12 @@ def _manifest_summary() -> dict:
         ],
         "failures": manifest.get("failures", []),
     }
+
+
+@app.get("/api/briefing")
+def get_briefing() -> dict:
+    """Tonight's work order: where to go, why, and what to do there."""
+    return state.briefing
 
 
 @app.get("/api/findings/cooling")

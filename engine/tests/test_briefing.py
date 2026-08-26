@@ -1,0 +1,109 @@
+"""The shift briefing.
+
+This is the surface an operator acts on, so the assertions are about the
+promises it makes to them: only tracts a visit could resolve, ordered by the
+people behind them, and never silent about why it cannot call one.
+"""
+from __future__ import annotations
+
+import pytest
+
+from nullsignal.findings import briefing
+from nullsignal.inference import engine
+from nullsignal.types import DecisionState, Reliability
+
+from helpers import make_evidence, make_propensity, make_zone
+
+HEALTHY = {n: Reliability() for n in ("311", "nws", "gtfs_rt", "cdc_svi")}
+
+
+def assessed(items):
+    return [(item, engine.assess(item, rank_checks=True)) for item in items]
+
+
+def a_blind_tract(population=5000, svi=0.9, geoid="36061000100"):
+    """A tract with the transit feed gone, which is what makes it unresolvable."""
+    return make_evidence(
+        zone=make_zone(geoid=geoid, population=population, svi_overall=svi),
+        sources={**HEALTHY, "gtfs_rt": Reliability.absent()},
+        propensity=make_propensity(),
+    )
+
+
+def a_clear_tract(geoid="36061000200"):
+    return make_evidence(
+        zone=make_zone(geoid=geoid, population=5000, svi_overall=0.2),
+        sources=HEALTHY, heat_index_f=78.0, propensity=make_propensity(),
+    )
+
+
+def test_only_tracts_a_visit_could_resolve_are_assigned():
+    """A tract already called either way is not verification work.
+
+    Sending a crew to a place the engine understands wastes the shift, which is
+    the whole reason the queue is ranked on unresolved harm rather than risk.
+    """
+    result = briefing.build(assessed([a_blind_tract(), a_clear_tract()]))
+
+    states = {a["geoid"] for a in result.assignments}
+    for item, ours in assessed([a_clear_tract()]):
+        if ours.state is not DecisionState.UNKNOWN:
+            assert item.zone.geoid not in states
+
+
+def test_empty_tracts_never_reach_the_list():
+    """Ranking on per-capita harm alone put parkland and a cemetery on top."""
+    empty = make_evidence(
+        zone=make_zone(geoid="36061009900", population=0, svi_overall=0.95),
+        sources={**HEALTHY, "gtfs_rt": Reliability.absent()},
+        propensity=make_propensity(),
+    )
+    result = briefing.build(assessed([empty, a_blind_tract()]))
+
+    assert "36061009900" not in {a["geoid"] for a in result.assignments}
+
+
+def test_assignments_are_ordered_by_the_people_behind_them():
+    small = a_blind_tract(population=400, geoid="36061000300")
+    large = a_blind_tract(population=20000, geoid="36061000400")
+    result = briefing.build(assessed([small, large]))
+
+    assert [a["geoid"] for a in result.assignments][0] == "36061000400"
+    stakes = [a["residents_at_stake"] for a in result.assignments]
+    assert stakes == sorted(stakes, reverse=True)
+
+
+def test_every_assignment_says_why_it_cannot_be_called():
+    """An order that says "go here" without saying why is not actionable."""
+    result = briefing.build(assessed([a_blind_tract()]))
+
+    for assignment in result.assignments:
+        assert assignment["blind_because"], assignment
+        assert all(reason.strip() for reason in assignment["blind_because"])
+
+
+def test_a_missing_source_is_named_before_a_disagreement():
+    """Ordering carries meaning: if the evidence is absent, resolving a
+    conflict among what remains does not produce a verdict."""
+    result = briefing.build(assessed([a_blind_tract()]))
+    reasons = result.assignments[0]["blind_because"]
+
+    assert "unavailable" in reasons[0]
+
+
+def test_the_tally_counts_every_unresolved_tract_not_just_the_page():
+    """The briefing shows eight assignments; the tally must speak for all of
+    them, or it understates what the city actually needs tonight."""
+    tracts = [a_blind_tract(geoid=f"3606100{i:04d}") for i in range(12)]
+    result = briefing.build(assessed(tracts), limit=4)
+
+    assert len(result.assignments) == 4
+    assert result.uncertifiable_tracts == 12
+    assert sum(row["tracts"] for row in result.check_tally) == 12
+
+
+def test_shares_are_zero_rather_than_wrong_without_a_quintile():
+    """No vulnerability cut available means no claim, not a claim of zero risk."""
+    result = briefing.build(assessed([a_blind_tract()]), top_quintile=None)
+    assert result.top_quintile_share == 0.0
+    assert result.concentration == 0.0

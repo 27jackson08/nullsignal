@@ -7,9 +7,9 @@ const PARAM = "surface";
  *  In the URL because a finding is the thing worth sending to someone. A
  *  colleague opening the link should land on the claim, not on a map they then
  *  have to navigate. */
-export type Surface = "console" | "cooling";
+export type Surface = "briefing" | "console" | "cooling";
 
-const SURFACES: readonly Surface[] = ["console", "cooling"];
+const SURFACES: readonly Surface[] = ["briefing", "console", "cooling"];
 
 function read(): Surface {
   const value = new URLSearchParams(window.location.search).get(PARAM);

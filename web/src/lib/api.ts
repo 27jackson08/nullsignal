@@ -215,3 +215,25 @@ export interface CoolingFinding {
 
 export const fetchCoolingFinding = () =>
   apiGet<CoolingFinding>("/api/findings/cooling");
+
+
+export interface Briefing {
+  issued_at: string | null;
+  situation: {
+    uncertifiable_tracts: number;
+    uncertifiable_residents: number;
+    top_quintile_share: number;
+    citywide_top_quintile_share: number;
+    concentration: number;
+  };
+  assignments: {
+    rank: number; geoid: string; name: string; borough: string;
+    population: number; residents_at_stake: number;
+    blind_because: string[];
+    check: { label: string; minutes: number; detail: string } | null;
+  }[];
+  check_tally: { check: string; tracts: number; residents: number; minutes: number }[];
+  residents_on_the_list: number;
+}
+
+export const fetchBriefing = () => apiGet<Briefing>("/api/briefing");

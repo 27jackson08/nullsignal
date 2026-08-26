@@ -9,6 +9,7 @@ import { CompareView } from "./components/compare/CompareView";
 import { Scoreboard } from "./components/scoreboard/Scoreboard";
 import { Welcome, hasBeenWelcomed } from "./components/welcome/Welcome";
 import { CoolingFinding } from "./components/findings/CoolingFinding";
+import { ShiftBriefing } from "./components/briefing/ShiftBriefing";
 import { useSurface } from "./hooks/useSurface";
 import { useSelectedZone } from "./hooks/useSelectedZone";
 import { useScenario } from "./hooks/useScenario";
@@ -52,9 +53,11 @@ export default function App() {
         surface={surface}
         onSurfaceChange={setSurface}
       />
-      {surface === "cooling" ? (
+      {surface !== "console" ? (
         <div className="app-body is-full">
-          <CoolingFinding />
+          {surface === "briefing"
+            ? <ShiftBriefing onOpenAudit={() => setSurface("cooling")} />
+            : <CoolingFinding />}
         </div>
       ) : (
       <div className={mode === "result" ? "app-body is-full" : "app-body"}>

@@ -15,6 +15,7 @@ interface AppHeaderProps {
 }
 
 const SURFACES: { id: Surface; label: string }[] = [
+  { id: "briefing", label: "Tonight\u2019s briefing" },
   { id: "console", label: "Console" },
   { id: "cooling", label: "Heat relief audit" },
 ];

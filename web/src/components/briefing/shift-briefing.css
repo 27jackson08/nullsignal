@@ -1,0 +1,158 @@
+.briefing .record-title { max-width: 16ch; }
+
+.print-order {
+  margin-top: var(--space-4);
+  padding: .5rem .9rem;
+  font-family: var(--font-display);
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--surface);
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+.print-order:hover { background: var(--alarm); border-color: var(--alarm); }
+
+/* --- situation ----------------------------------------------------------- */
+
+.situation {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  margin-top: var(--space-4);
+}
+
+.situation-figure {
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+  padding-top: .6rem;
+  border-top: 1px solid var(--rule);
+}
+
+.situation-figure .n {
+  font-size: clamp(2.2rem, 1.4rem + 2.6vw, 3.4rem);
+  font-weight: 800;
+  line-height: .95;
+  letter-spacing: -.035em;
+  color: var(--alarm);
+}
+
+.situation-figure .of {
+  font-family: var(--font-serif);
+  font-size: .94rem;
+  line-height: 1.45;
+  color: var(--ink-dim);
+}
+
+.inline-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.inline-link:hover { color: var(--alarm); }
+
+/* --- assignments --------------------------------------------------------- */
+/* A work order, not a card grid: a tick box, a number, and three columns that
+   answer where, why and what to do. */
+
+.assignments { list-style: none; margin: var(--space-4) 0 0; padding: 0; }
+
+.assignment {
+  display: grid;
+  grid-template-columns: 1.6rem 2.4rem minmax(11rem, 1.1fr) minmax(14rem, 1.5fr) minmax(12rem, 1.2fr);
+  gap: var(--space-4);
+  align-items: start;
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--rule);
+}
+.assignment:first-child { border-top: 1px solid var(--ink); }
+
+.tick {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-top: .1rem;
+  border: 1.5px solid var(--ink);
+}
+
+.assignment .rank {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  color: var(--ink-faint);
+  line-height: 1;
+}
+
+.assignment .place {
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  line-height: 1.2;
+}
+
+.assignment .meta {
+  margin-top: .25rem;
+  font-size: .78rem;
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
+.why-label,
+.assignment .do {
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.why ul { list-style: none; margin: .3rem 0 0; padding: 0; }
+.why li {
+  font-family: var(--font-serif);
+  font-size: .88rem;
+  line-height: 1.45;
+  color: var(--ink-dim);
+  padding-left: .8rem;
+  text-indent: -.8rem;
+}
+.why li::before { content: "— "; color: var(--ink-faint); }
+
+.assignment .action .do {
+  font-family: var(--font-display);
+  font-size: .95rem;
+  font-weight: 700;
+  letter-spacing: -.005em;
+  text-transform: none;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+@media (max-width: 62rem) {
+  .assignment {
+    grid-template-columns: 1.6rem 2.4rem 1fr;
+    row-gap: var(--space-3);
+  }
+  .assignment .why,
+  .assignment .action { grid-column: 3; }
+}
+
+/* --- printed ------------------------------------------------------------- */
+/* The point of a work order is that it leaves the screen. */
+
+@media print {
+  .app-header, .print-order { display: none !important; }
+  .record { overflow: visible; }
+  .record-masthead { break-after: avoid; }
+  .assignment { break-inside: avoid; }
+  .situation-figure .n, .record-count .n { color: #000; }
+  .assignment .rank { color: #000; }
+  a[href]::after { content: ""; }
+}

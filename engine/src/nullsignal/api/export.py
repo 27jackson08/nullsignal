@@ -48,6 +48,8 @@ def export(out_dir: Path, scenarios_dir: Path, *, scenario_names: list[str] | No
     print(f"  explanations: {generated:,} generated, "
           f"{len(api_app.state.detail) - generated:,} templated", flush=True)
 
+    written["briefing"] = _write(out_dir / "briefing.json", api_app.state.briefing)
+
     from ..findings.cooling import audit as cooling_audit
     (out_dir / "findings").mkdir(exist_ok=True)
     written["cooling_finding"] = _write(out_dir / "findings" / "cooling.json",
