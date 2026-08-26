@@ -70,6 +70,8 @@ def build_store(raw_dir: Path, db_path: Path) -> dict[str, int]:
         counts["cooling_sites"] = _load_cooling(con, raw_dir / "cooling_sites.json")
         counts["air_quality"] = _load_air_quality(con, raw_dir / "air_quality.json")
         counts["climatology"] = _load_climatology(con, raw_dir / "climatology.json")
+        counts["ems"] = _load_ems(con, raw_dir / "ems_dispatches.json")
+        counts["alerts"] = _load_alerts(con, raw_dir / "nws_alerts.json")
         counts["cooling_access"] = _compute_cooling_access(con)
         counts["transit_coverage"] = _compute_transit_coverage(con)
         counts["weather"] = _load_weather(con, raw_dir / "nws_forecast.json")
@@ -330,6 +332,76 @@ def _load_climatology(con: duckdb.DuckDBPyConnection, path: Path) -> int:
         [str(path)],
     )
     return _count(con, "climate_normals")
+
+
+def _load_ems(con: duckdb.DuckDBPyConnection, path: Path) -> int:
+    """Heat-related ambulance dispatches, joined through community district.
+
+    An independent read on the same harm 311 describes. Someone calling an
+    ambulance is not filing a complaint: it does not depend on knowing the 311
+    number, on speaking English, or on expecting a response. Where the
+    propensity model has to discount what a tract says, this speaks about the
+    same tract through a channel that bias does not run through.
+    """
+    path = _resolve(path, "ems_dispatches")
+    con.execute(
+        """
+        CREATE OR REPLACE TABLE ems_dispatches AS
+        SELECT district_id,
+               CAST(heat_dispatches AS INTEGER)   AS heat_dispatches,
+               CAST(health_dispatches AS INTEGER) AS health_dispatches
+        FROM read_json_auto(?)
+        """,
+        [str(path)],
+    )
+    con.execute(
+        """
+        ALTER TABLE zones ADD COLUMN IF NOT EXISTS ems_heat_share DOUBLE;
+        UPDATE zones SET ems_heat_share = (
+            SELECT CASE WHEN e.health_dispatches > 0
+                        THEN e.heat_dispatches * 1.0 / e.health_dispatches END
+            FROM ems_dispatches e
+            WHERE e.district_id = _district_id(zones.community_district)
+        );
+        """
+    )
+    return _count(con, "ems_dispatches")
+
+
+def _load_alerts(con: duckdb.DuckDBPyConnection, path: Path) -> int:
+    """Active watches and warnings.
+
+    Usually empty, and the empty state is the useful one: "our data says
+    extreme heat and the weather service has issued nothing" is a contradiction
+    that only exists because the absence was recorded rather than skipped.
+    """
+    path = _resolve(path, "nws_alerts")
+
+    # The empty file is the *normal* state and must not be an error. DuckDB
+    # cannot infer a schema from `[]`, so the table is declared explicitly and
+    # only filled when there is something to fill it with. Letting an absence
+    # of alerts crash the build would be a peculiar failure for a system whose
+    # subject is the meaning of absence.
+    con.execute(
+        """
+        CREATE OR REPLACE TABLE nws_alerts (
+            event VARCHAR, severity VARCHAR, urgency VARCHAR,
+            area VARCHAR, is_heat BOOLEAN
+        )
+        """
+    )
+    import json as _json
+
+    if _json.loads(path.read_text() or "[]"):
+        con.execute(
+            """
+            INSERT INTO nws_alerts
+            SELECT event, severity, urgency, area, CAST(is_heat AS BOOLEAN)
+            FROM read_json_auto(?)
+            """,
+            [str(path)],
+        )
+    return _count(con, "nws_alerts")
 
 
 def _register_district_crosswalk(con: duckdb.DuckDBPyConnection) -> None:
