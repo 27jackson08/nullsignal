@@ -11,7 +11,7 @@ import type { TickView, Truth } from "../../lib/playback";
 import "./zone-map.css";
 
 export type ViewMode =
-  | "nullsignal" | "baseline" | "disagreement" | "truth" | "compare";
+  | "nullsignal" | "baseline" | "disagreement" | "truth" | "compare" | "result";
 
 /** Ground truth is coloured on its own scale, not the decision palette.
  *  Truth is what *is*; the four decision states are what a system was willing

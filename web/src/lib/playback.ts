@@ -32,6 +32,7 @@ export interface Playback {
       false_reassurance_rate: number;
       residents_falsely_reassured: number;
       false_alarm_rate: number;
+      unresolved_rate: number;
       warning_hours: number | null;
     }[];
     blind_spot_concentration: number;

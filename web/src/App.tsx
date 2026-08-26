@@ -6,6 +6,7 @@ import { EvidencePanel } from "./components/panel/EvidencePanel";
 import { FeedHealthPanel } from "./components/feeds/FeedHealthPanel";
 import { ZoneMap, type ViewMode } from "./components/map/ZoneMap";
 import { CompareView } from "./components/compare/CompareView";
+import { Scoreboard } from "./components/scoreboard/Scoreboard";
 import { useSelectedZone } from "./hooks/useSelectedZone";
 import { useScenario } from "./hooks/useScenario";
 import { useZones } from "./hooks/useZones";
@@ -26,7 +27,7 @@ export default function App() {
   // Ground truth is only knowable inside a scenario, so leaving that view
   // selected after returning to live data would show a lie.
   useEffect(() => {
-    if (!scenario.name && mode === "truth") setMode("nullsignal");
+    if (!scenario.name && (mode === "truth" || mode === "result")) setMode("nullsignal");
   }, [scenario.name, mode]);
   const [selectedGeoid, setSelectedGeoid] = useSelectedZone();
 
@@ -40,7 +41,7 @@ export default function App() {
         activeScenario={scenario.name}
         onLoadScenario={(name) => (name ? scenario.load(name) : scenario.exit())}
       />
-      <div className="app-body">
+      <div className={mode === "result" ? "app-body is-full" : "app-body"}>
         <main className="map-region">
           {error && (
             <div className="boot-message boot-error">
@@ -52,11 +53,14 @@ export default function App() {
           {isLoading && !error && (
             <div className="boot-message"><p className="label">Loading tracts…</p></div>
           )}
+          {mode === "result" && scenario.playback && (
+            <Scoreboard playback={scenario.playback} />
+          )}
           {zones && mode === "compare" && (
             <CompareView zones={zones} summary={summary} view={scenario.view}
                          selectedGeoid={selectedGeoid} onSelect={setSelectedGeoid} />
           )}
-          {zones && mode !== "compare" && (
+          {zones && mode !== "compare" && mode !== "result" && (
             <>
               <ZoneMap zones={zones} mode={mode} selectedGeoid={selectedGeoid}
                        onSelect={setSelectedGeoid} view={scenario.view} />
@@ -69,7 +73,12 @@ export default function App() {
             </>
           )}
         </main>
-        <EvidencePanel geoid={selectedGeoid} onSelect={setSelectedGeoid} />
+        {/* The result view is a conclusion, not a workspace: the tract panel
+            beside it competes for attention with the one number the run
+            produced. */}
+        {mode !== "result" && (
+          <EvidencePanel geoid={selectedGeoid} onSelect={setSelectedGeoid} />
+        )}
       </div>
       {scenario.playback && (
         <Timeline

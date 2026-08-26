@@ -30,6 +30,7 @@ body {
   max-width: 100vw;
 }
 .app-shell.has-timeline { grid-template-rows: var(--header-height) 1fr auto; }
+.app-body.is-full { grid-template-columns: minmax(0, 1fr); }
 
 .app-body {
   position: relative;

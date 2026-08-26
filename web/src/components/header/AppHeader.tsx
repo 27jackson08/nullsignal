@@ -20,6 +20,7 @@ const MODES: { id: ViewMode; label: string; hint: string; scenarioOnly?: boolean
   // know it. Offering it on live data would be a lie about what we can see.
   { id: "truth", label: "Ground truth", hint: "What was actually happening",
     scenarioOnly: true },
+  { id: "result", label: "Result", hint: "What the run measured", scenarioOnly: true },
 ];
 
 export function AppHeader({

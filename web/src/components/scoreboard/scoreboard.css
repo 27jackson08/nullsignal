@@ -1,0 +1,130 @@
+.scoreboard {
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-6) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-width: 62rem;
+  margin: 0 auto;
+}
+
+.scoreboard > header { text-align: center; }
+.scoreboard .at-risk {
+  margin: var(--space-2) 0 0;
+  font-size: .92rem;
+  color: var(--ink-dim);
+}
+.scoreboard .at-risk .numeric {
+  font-family: var(--font-mono);
+  color: var(--ink);
+  font-size: 1.05rem;
+  margin-right: .45rem;
+}
+
+.verdicts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+}
+.verdicts article {
+  background: var(--surface);
+  padding: var(--space-5) var(--space-4);
+  text-align: center;
+}
+.verdicts .is-ours { background: var(--surface-raised); }
+
+.verdicts .who {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: .66rem;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.scoreboard .big {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.6rem, 1.6rem + 3vw, 4rem);
+  line-height: 1;
+  letter-spacing: -.03em;
+  margin: var(--space-3) 0 var(--space-2);
+}
+.scoreboard .bad { color: var(--state-confirmed-high); }
+.scoreboard .good { color: var(--state-confirmed-low); }
+.verdicts .what { margin: 0; font-size: .82rem; color: var(--ink-dim); }
+.verdicts .residents {
+  margin: var(--space-2) 0 0;
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  color: var(--ink-faint);
+}
+
+.scoreboard table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .86rem;
+  border: 1px solid var(--rule);
+}
+.scoreboard th {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: .62rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: .6rem .9rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule);
+}
+.scoreboard th:first-child { text-align: left; }
+.scoreboard td { padding: .6rem .9rem; text-align: right; background: var(--surface); }
+.scoreboard td:first-child { text-align: left; color: var(--ink-dim); }
+.scoreboard tr.is-ours td { background: var(--surface-raised); color: var(--ink); }
+
+.scoreboard .gloss {
+  margin: 0;
+  font-size: .74rem;
+  line-height: 1.6;
+  color: var(--ink-faint);
+}
+.scoreboard .gloss strong { color: var(--ink-dim); font-weight: 600; }
+
+.concentration {
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--accent);
+}
+.concentration p:last-child {
+  margin: var(--space-2) 0 0;
+  font-size: .95rem;
+  line-height: 1.6;
+}
+.concentration .big {
+  font-size: 1.6rem;
+  display: inline-block;
+  margin: 0 .5rem 0 0;
+  vertical-align: -.1rem;
+}
+
+.caveat {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  font-size: .84rem;
+  line-height: 1.55;
+  color: var(--ink-dim);
+  background: color-mix(in oklab, var(--state-suspected) 10%, transparent);
+  border-left: 2px solid var(--state-suspected);
+}
+.caveat.is-loss {
+  background: color-mix(in oklab, var(--state-confirmed-high) 10%, transparent);
+  border-left-color: var(--state-confirmed-high);
+}
+
+@media (max-width: 700px) {
+  .scoreboard { padding: var(--space-4); }
+  .verdicts { grid-template-columns: 1fr; }
+}
