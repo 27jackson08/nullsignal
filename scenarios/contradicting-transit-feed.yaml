@@ -1,0 +1,24 @@
+name: contradicting-transit-feed
+description: >
+  The transit feed does not freeze - it inverts. Service alerts appear when
+  nothing is wrong and vanish when service actually stops. Rarer than freezing
+  and far more visible, because every other source begins disagreeing with it.
+
+  This is the failure mode a contradiction graph exists for. Nothing about the
+  feed's liveness is wrong; the payload changes, the clock advances, the
+  content is simply false.
+
+duration_hours: 12
+tick_hours: 1
+
+timeline:
+  - at_hour: 0
+    heat_index_f: 86
+  - at_hour: 4
+    heat_index_f: 95
+  - at_hour: 5
+    inject: {source: gtfs_rt, mode: CONTRADICT}
+    note: the transit feed begins reporting the opposite of the truth
+  - at_hour: 7
+    transit_disrupted: true
+    note: service stops while the feed reports it restored

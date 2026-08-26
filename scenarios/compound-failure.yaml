@@ -1,0 +1,31 @@
+name: compound-failure
+description: >
+  Three faults at once, which is what a bad day actually looks like. The transit
+  feed freezes, the weather station drifts cool, and 311 reporting collapses -
+  none of them dramatic on its own, all of them pulling the same direction:
+  towards a city that appears calmer than it is.
+
+  Every single-fault scenario in this suite is a simplification. This one asks
+  whether the layers compose or whether they cancel.
+
+duration_hours: 16
+tick_hours: 1
+
+timeline:
+  - at_hour: 0
+    heat_index_f: 85
+  - at_hour: 4
+    heat_index_f: 93
+    note: heat building, still short of any advisory
+  - at_hour: 6
+    inject: {source: gtfs_rt, mode: STALE_BUT_200}
+    note: transit feed freezes
+  - at_hour: 7
+    inject: {source: nws, mode: SLOW_DRIFT, drift_f: 2.0, borough: Bronx}
+    note: a weather station begins drifting cool
+  - at_hour: 8
+    transit_disrupted: true
+    note: service stops
+  - at_hour: 9
+    inject: {source: "311", mode: SUPPRESS, factor: 0.1}
+    note: reporting collapses in the affected tracts

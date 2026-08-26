@@ -1,0 +1,18 @@
+name: all-clear
+description: >
+  The control. A warm day, every feed healthy, nothing wrong anywhere. Included
+  because a system that only ever runs against disasters has not shown it can
+  stay quiet - and an engine that flags a calm city is useless however well it
+  performs during an emergency.
+
+duration_hours: 10
+tick_hours: 1
+
+timeline:
+  - at_hour: 0
+    heat_index_f: 82
+  - at_hour: 5
+    heat_index_f: 88
+    note: warm, unremarkable
+  - at_hour: 8
+    heat_index_f: 84

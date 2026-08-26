@@ -1,0 +1,23 @@
+name: delayed-transit-feed
+description: >
+  Correct data, hours late. Nothing in the payload is wrong - the values are
+  real and the feed is healthy. What is wrong is that they describe a city that
+  has already moved on.
+
+  A liveness check passes cleanly here, because the content genuinely changes.
+  Only freshness catches it, which is why freshness and liveness are separate
+  quantities rather than one number called reliability.
+
+duration_hours: 12
+tick_hours: 1
+
+timeline:
+  - at_hour: 0
+    heat_index_f: 86
+  - at_hour: 4
+    heat_index_f: 96
+  - at_hour: 5
+    inject: {source: gtfs_rt, mode: LATENCY, latency_hours: 4}
+    note: transit data begins arriving four hours behind
+  - at_hour: 6
+    transit_disrupted: true

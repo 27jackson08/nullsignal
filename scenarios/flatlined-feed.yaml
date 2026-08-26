@@ -1,0 +1,24 @@
+name: flatlined-feed
+description: >
+  The payload stops changing but the values stay correct, because nothing has
+  moved yet. A frozen feed that happens to be right is indistinguishable from a
+  live one until the world changes underneath it - and then it is wrong without
+  ever having reported anything false.
+
+  Included to separate two things a single reliability number would blur: this
+  feed is not lying, it is no longer listening.
+
+duration_hours: 12
+tick_hours: 1
+
+timeline:
+  - at_hour: 0
+    heat_index_f: 87
+  - at_hour: 3
+    inject: {source: gtfs_rt, mode: FLATLINE}
+    note: payload stops changing while the values are still correct
+  - at_hour: 5
+    heat_index_f: 95
+  - at_hour: 8
+    transit_disrupted: true
+    note: the world moves; the feed does not
