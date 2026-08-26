@@ -4,7 +4,20 @@ The rule that matters here is what we do *not* do: contradictions are never
 fused. Averaging "transit halted" with "transit normal" into "mildly degraded"
 would launder a crisis into a shrug, and produce a confident-looking number
 with nothing behind it. A conflict widens uncertainty instead -- it lowers
-sufficiency, leaving the risk estimate where it was and the decision unmade.
+sufficiency and leaves the risk estimate exactly where it was.
+
+Two limits on how far that goes, both measured rather than assumed:
+
+Conflict carries 20% of the sufficiency weight, and the decision threshold sits
+at 0.55, so a fully saturated contradiction on its own lands at 0.80 and cannot
+by itself move a zone to UNKNOWN. It contributes; it does not decide. See
+`test_contradiction_alone_cannot_withhold_a_verdict`.
+
+And a direct conflict requires two sources making claims about the *same*
+proposition. This system has one source per subject -- one transit feed, one
+weather provider -- so in practice only the inferential rules below ever fire.
+That is the root cause of both scenarios NullSignal loses: a sole witness
+lying well leaves nothing to disagree with it.
 """
 from __future__ import annotations
 
@@ -15,6 +28,10 @@ from .types import Claim, Contradiction, Subject
 # Heat bands at which residents of a normally-vocal tract would be expected to
 # call 311 about something.
 DANGEROUS_HEAT = frozenset({"high", "extreme"})
+
+# Heat bands at which no instrument is claiming anything is wrong, so an
+# elevated volume of complaints has nothing to explain it.
+BENIGN_HEAT = frozenset({"low", "moderate"})
 
 # Contradiction mass at which sufficiency is fully forfeit.
 SATURATION_MASS = 1.0
@@ -53,6 +70,7 @@ def build(claims: tuple[Claim, ...]) -> ContradictionGraph:
     found: list[Contradiction] = []
     found.extend(_direct_conflicts(by_subject))
     found.extend(_expected_but_absent(by_subject))
+    found.extend(_unexplained_distress(by_subject))
     return ContradictionGraph(claims, tuple(found))
 
 
@@ -93,5 +111,45 @@ def _expected_but_absent(by_subject: dict[Subject, list[Claim]]) -> list[Contrad
                 heat, distress,
                 reason=("dangerous heat, yet this tract has gone quieter than "
                         "its own usual rate"),
+            ))
+    return conflicts
+
+
+def _unexplained_distress(by_subject: dict[Subject, list[Claim]]) -> list[Contradiction]:
+    """Residents calling well above their own rate while every instrument says
+    nothing is happening.
+
+    The mirror of `_expected_but_absent`, and the only trace a slow citywide
+    sensor drift leaves. A thermometer biased toward the seasonal normal cannot
+    be caught by cross-station agreement -- every station moves together -- nor
+    by the climatology band, because the normal is exactly where the reading
+    lands. What it cannot do is stop people who are actually hot from calling
+    311.
+
+    Two things make this safe to raise. It requires a hazard claim that says
+    benign, not merely the absence of one: a source we do not trust has not
+    told us the weather is fine, and treating its silence as "fine" is the bug
+    this project exists to prevent. And it is a contradiction rather than
+    evidence of danger, so it lowers sufficiency and leaves the risk estimate
+    untouched -- an unexplained surge in complaints is a reason to stop
+    certifying safety, not a reason to claim an emergency. People call 311
+    about a great many things that are not heat.
+    """
+    heat_claims = by_subject.get(Subject.HEAT_EXPOSURE, [])
+    distress_claims = by_subject.get(Subject.POPULATION_DISTRESS, [])
+    if not heat_claims:
+        return []
+
+    conflicts: list[Contradiction] = []
+    for distress in distress_claims:
+        if distress.value != "elevated":
+            continue
+        for heat in heat_claims:
+            if heat.value not in BENIGN_HEAT:
+                continue
+            conflicts.append(Contradiction(
+                heat, distress,
+                reason=("residents are reporting well above their own usual "
+                        "rate, and no instrument accounts for it"),
             ))
     return conflicts

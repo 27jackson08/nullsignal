@@ -156,3 +156,61 @@ def test_a_tract_reporting_at_its_usual_rate_is_not_a_contradiction():
                            report_count=200, recent_report_count=7,  # ~on pace
                            propensity=make_propensity(1.5))
     assert build(claims).contradictions == ()
+
+
+def test_unexplained_distress_is_raised_when_no_instrument_accounts_for_it():
+    """The mirror of the expected-but-absent rule.
+
+    A citywide sensor drift toward the seasonal normal defeats cross-station
+    agreement (every station moves together) and the climatology band (the
+    normal is where the reading lands). What it cannot do is stop people who
+    are actually hot from calling 311.
+    """
+    evidence, claims = claims_for(
+        heat_index_f=78.0,                      # the drifting sensor's story
+        report_count=200, recent_report_count=40,   # 2.2x this tract's own rate
+        sources=HEALTHY,
+    )
+    graph = build(claims)
+
+    assert any("no instrument accounts for it" in text for text in graph.describe()), (
+        f"claims were {[f'{c.subject}={c.value}' for c in claims]}, "
+        f"contradictions {graph.describe()}"
+    )
+
+
+def test_no_conflict_is_raised_from_a_source_we_do_not_trust():
+    """Absence of a claim is not a benign claim.
+
+    If the weather feed is untrusted it makes no claim at all, and silence must
+    not be read as "it is mild out" -- that inversion is the bug the whole
+    project exists to prevent.
+    """
+    evidence, claims = claims_for(
+        heat_index_f=78.0,
+        report_count=200, recent_report_count=40,
+        sources={**HEALTHY, "nws": Reliability.absent()},
+    )
+    graph = build(claims)
+
+    assert not any("no instrument accounts for it" in t for t in graph.describe())
+
+
+def test_contradiction_alone_cannot_withhold_a_verdict():
+    """A measured structural limit, asserted so it cannot drift unnoticed.
+
+    Conflict carries 20% of the sufficiency weight against a 0.55 threshold, so
+    even total disagreement lands at 0.80. Contradiction contributes to the
+    decision; it never makes it. Changing the weights should break this test
+    and force the tradeoff to be looked at directly.
+    """
+    from nullsignal import config
+    from nullsignal.types import Sufficiency
+
+    saturated = Sufficiency(entropy=1.0, coverage=1.0, contradiction=0.0, staleness=1.0)
+
+    assert saturated.score == pytest.approx(0.80)
+    assert saturated.score > config.SUFFICIENCY_THRESHOLD, (
+        "contradiction can now withhold a verdict on its own -- that may be "
+        "the right call, but it is a change of behaviour, not a tuning tweak"
+    )

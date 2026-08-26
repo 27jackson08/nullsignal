@@ -296,11 +296,38 @@ scoreboard — but NullSignal is still fooled, and that is worth saying plainly.
 
 Every failure with a second opinion available is caught — a frozen feed, a stale
 feed, a partial feed, one drifting station, three faults at once. What is not
-caught is a sole witness lying well. The named fix is cross-feed content
-agreement across the seven MTA subway feeds, the transit equivalent of the
-cross-station weather check, and **it is not built**. The scenarios are left in
-the suite, and a test asserts the limit, so its absence cannot be mistaken for
-a fix.
+caught is a sole witness lying well.
+
+**Both losses reduce to one root cause, and it is measurable.** Detecting a
+lying source means finding something that disagrees with it, and this system
+carries one source per subject: one transit feed, one weather provider. A
+direct conflict needs two claims about the *same* proposition, so on live data
+it fires on **zero** tracts. There is never a second witness to call the first
+one wrong.
+
+Two softer rules do fire, comparing a hazard reading against how much residents
+are actually calling: dangerous heat with the tract gone quiet, and its mirror,
+residents calling well above their own rate with no instrument accounting for
+it. The second one *does* catch the drift — from t+7h the affected tracts carry
+`nws says heat_exposure=low but 311 says population_distress=elevated`, and on
+live data it names 359 tracts where something is going on that no instrument
+explains. It shows in the tract panel. It is still not enough to change the
+verdict:
+conflict carries 20% of the sufficiency weight against a 0.55 threshold, so
+even total disagreement lands at 0.80. Contradiction contributes to a decision;
+it never makes one. A test asserts that limit rather than leaving it to be
+rediscovered.
+
+Raising that weight would flip both scenarios, which is exactly why it was not
+done on a deadline. On live data 359 tracts (15.4%) already carry an
+unexplained-distress conflict, because people call 311 about a great many
+things that are not heat. Making conflict decisive would turn all of them
+`UNKNOWN` on a calm day, and an engine that cannot stay quiet has learned the
+wrong lesson. The real fix is a second source of the same kind — the seven MTA
+subway feeds read as independent claims, a second weather provider — so that
+disagreement is between two instruments rather than between an instrument and a
+proxy. **It is not built.** The scenarios stay in the suite and tests assert
+the limits, so its absence cannot be mistaken for a fix.
 
 ### Two different failures, two different columns
 
