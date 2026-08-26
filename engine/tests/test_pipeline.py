@@ -90,3 +90,26 @@ def test_assessment_runs_over_the_whole_city_without_raising(evidence):
     states = {engine.assess(item).state for item in evidence}
     assert states, "expected at least one state"
     assert states <= set(DecisionState)
+
+
+def test_a_committed_snapshot_does_not_expire(evidence):
+    """Regression: the weather join filtered on wall-clock `now()`.
+
+    A snapshot stopped matching a day after it was taken, so weather became a
+    missing critical source and every tract in the city fell to UNKNOWN. The
+    engine's behaviour was correct -- it declined to certify safety without
+    weather -- but the gap was self-inflicted, and a working directory hides it
+    because the snapshot keeps being refreshed. It only surfaced in a clean
+    clone.
+    """
+    with_weather = [item for item in evidence if item.heat_index_f is not None]
+    assert len(with_weather) > 0.9 * len(evidence), (
+        "committed weather must still join however old the snapshot is"
+    )
+
+    unknown = sum(1 for item in evidence
+                  if engine.assess(item).state is DecisionState.UNKNOWN)
+    assert unknown < 0.5 * len(evidence), (
+        f"{unknown} of {len(evidence)} tracts unknown -- a source has silently "
+        "stopped joining"
+    )

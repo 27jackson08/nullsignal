@@ -53,11 +53,22 @@ def load_evidence(
             FROM zones z
             LEFT JOIN reports_by_zone r USING (geoid)
             LEFT JOIN (
+                -- Anchored to the snapshot's own forecast, not to wall clock.
+                --
+                -- Filtering on now() meant a committed snapshot silently
+                -- stopped matching a day after it was taken: the join returned
+                -- nothing, weather became a missing critical source, and every
+                -- tract in the city fell to UNKNOWN. The engine's response was
+                -- correct -- it refused to certify safety without weather --
+                -- but the gap was self-inflicted, and it only showed up in a
+                -- clean clone because a working directory keeps getting
+                -- refreshed. Same fix as the 311 recent-report window.
                 SELECT borough,
-                       MAX(temperature_f)                                  AS temperature_f,
-                       AVG(relative_humidity)                              AS relative_humidity
+                       MAX(temperature_f)     AS temperature_f,
+                       AVG(relative_humidity) AS relative_humidity
                 FROM weather_forecast
-                WHERE valid_at BETWEEN now() AND now() + INTERVAL 24 HOUR
+                WHERE valid_at < (SELECT MIN(valid_at) FROM weather_forecast)
+                                 + INTERVAL 24 HOUR
                 GROUP BY borough
             ) w ON w.borough = z.borough
             LEFT JOIN (
