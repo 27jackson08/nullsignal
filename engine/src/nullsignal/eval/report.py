@@ -37,10 +37,49 @@ def run_evaluation(
     loaded = scenario_module.load(path)
     print(f"running {loaded.name} ({loaded.duration_hours}h)...", flush=True)
 
-    evidence = pipeline.load_evidence(db_path, raw_dir=raw_dir)
+    # Anchored to the moment the snapshot was taken, not to the moment the
+    # evaluation runs. Otherwise the scoreboard drifts as the fixtures age --
+    # 311 freshness decays against wall clock, more tracts fall to UNKNOWN, and
+    # a number that is supposed to be a property of the scenario becomes a
+    # property of the calendar. A scoreboard you cannot re-derive is an
+    # anecdote.
+    evidence = pipeline.load_evidence(
+        db_path, raw_dir=raw_dir, observed_at=snapshot_taken_at(raw_dir, db_path))
     result = simrun.run(loaded, evidence, _summer_normal(db_path))
     _render(score(result), loaded.description.strip())
     return 0
+
+
+def snapshot_taken_at(raw_dir: Path, db_path: Path):
+    """When the committed fixtures were captured.
+
+    The manifest records it; the newest 311 record is the fallback for a
+    snapshot assembled without one.
+    """
+    from datetime import UTC, datetime
+
+    from ..sources.snapshot import load_manifest
+
+    try:
+        stamp = load_manifest(raw_dir).get("snapshot_at")
+        if stamp:
+            parsed = datetime.fromisoformat(stamp)
+            return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+    except (FileNotFoundError, ValueError):
+        pass
+
+    from ..store import connect
+
+    con = connect(db_path, read_only=True)
+    try:
+        row = con.execute("SELECT MAX(created_at) FROM service_requests").fetchone()
+    except Exception:  # noqa: BLE001
+        return None
+    finally:
+        con.close()
+    if not row or row[0] is None:
+        return None
+    return row[0] if row[0].tzinfo else row[0].replace(tzinfo=UTC)
 
 
 def _summer_normal(db_path: Path) -> dict | None:

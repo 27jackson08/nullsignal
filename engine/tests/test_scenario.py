@@ -278,3 +278,45 @@ def test_the_two_costs_are_reported_separately():
     honest = EngineScore("honest", 0.0, 0, 0.0, 0.9, 10, 10, 0.0, 2.0)
     assert not honest.alarms_indiscriminately, \
         "declining to certify must not read as indiscriminate alarming"
+
+
+# --- reproducibility ----------------------------------------------------------
+
+def test_the_scoreboard_does_not_drift_with_the_calendar():
+    """A number that changes depending on when you run it is an anecdote.
+
+    Regression: the evaluation defaulted to wall clock, so 311 freshness decayed
+    as the committed fixtures aged and the unresolved rate crept upward — 24.7%
+    today, 27.0% a week later, 28.0% a month later. The scoreboard is a
+    property of the scenario and the snapshot, so it is anchored to when the
+    snapshot was taken.
+    """
+    from datetime import timedelta
+
+    from conftest import RAW_DIR, requires_snapshot
+
+    if not (RAW_DIR / "manifest.json").exists():
+        pytest.skip("no committed snapshot")
+
+    from nullsignal.eval.report import snapshot_taken_at
+
+    anchor = snapshot_taken_at(RAW_DIR, RAW_DIR.parent / "nullsignal.duckdb")
+    assert anchor is not None, "the snapshot must record when it was taken"
+
+    # Same anchor whatever the wall clock says, so the same evidence, so the
+    # same scoreboard.
+    cohort = synthetic_city()
+    first = scoreboard.score(simrun.run(SILENT_FAILURE, cohort))
+    second = scoreboard.score(simrun.run(SILENT_FAILURE, cohort))
+
+    assert first.nullsignal.as_row() == second.nullsignal.as_row()
+    assert first.baseline.as_row() == second.baseline.as_row()
+    assert first.blind_spot_concentration == second.blind_spot_concentration
+
+
+def test_the_snapshot_records_when_it_was_taken(tmp_path):
+    """The anchor depends on it, so its absence must be recoverable rather than
+    silently falling back to the calendar."""
+    from nullsignal.eval.report import snapshot_taken_at
+
+    assert snapshot_taken_at(tmp_path, tmp_path / "missing.duckdb") is None
