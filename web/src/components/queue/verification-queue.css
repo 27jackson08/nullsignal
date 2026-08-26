@@ -33,13 +33,13 @@
 .verification-queue button::before {
   content: counter(rank);
   grid-row: 1 / span 3;
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: .7rem;
   color: var(--ink-faint);
   padding-top: .15rem;
 }
 .q-name { font-size: .86rem; font-weight: 600; line-height: 1.3; }
-.q-meta { font-family: var(--font-mono); font-size: .64rem; color: var(--ink-faint); }
+.q-meta { font-family: var(--font-label); font-size: .64rem; color: var(--ink-faint); }
 .q-check {
   font-size: .72rem;
   color: var(--accent);
@@ -47,4 +47,4 @@
   line-height: 1.35;
 }
 .q-time { color: var(--ink-faint); }
-.queue-error { color: var(--state-confirmed-high); font-size: .78rem; }
+.queue-error { color: var(--state-high-ink); font-size: .78rem; }

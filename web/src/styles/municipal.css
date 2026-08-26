@@ -10,25 +10,21 @@
    running prose. There is deliberately no monospace: a grid of tabular figures
    does the work that a terminal font would otherwise be faking. */
 .record {
-  --paper:       #F8F8F5;
+  /* Local aliases onto the shared tokens, named for the document rather than
+     for the interface: a record has paper and rules, not surfaces and borders. */
+  --paper:       var(--surface);
   --paper-sunk:  #EFEFEA;
-  --ink:         #14161A;
-  --ink-muted:   #4C525A;
-  --ink-faint:   #767D86;
+  --ink-muted:   var(--ink-dim);
 
   /* Hairlines separate rows; the heavy rule separates arguments. */
-  --rule-hair:   #D4D5CF;
-  --rule-heavy:  #14161A;
+  --rule-hair:   var(--rule);
+  --rule-heavy:  var(--ink);
 
-  /* One alarm colour, used only where the record makes an accusation. */
-  --alarm:       #A82D17;
-  /* Municipal navy, for structure and provenance only. Never for emphasis. */
-  --civic:       #1B3F6B;
-
+  --civic:       var(--accent);
   --measured:    #2C6E49;
 
-  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
-  --sans: "Public Sans", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --serif: var(--font-serif);
+  --sans: var(--font-display);
 
   --gutter: clamp(1.25rem, 0.6rem + 2.6vw, 3.5rem);
 

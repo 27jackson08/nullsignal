@@ -55,7 +55,7 @@ body {
 }
 
 .label {
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: .66rem;
   font-weight: 600;
   letter-spacing: .13em;
@@ -84,7 +84,7 @@ body {
   padding: var(--space-6);
 }
 .boot-message pre {
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: .74rem;
   line-height: 1.7;
   text-align: left;

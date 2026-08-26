@@ -25,7 +25,7 @@
 }
 .hover-name { font-size: .85rem; font-weight: 600; }
 .hover-state {
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: .66rem;
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -38,5 +38,4 @@
   bottom: var(--space-4);
   margin: 0;
   pointer-events: none;
-  opacity: .55;
 }

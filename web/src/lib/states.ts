@@ -19,25 +19,25 @@ export interface StateMeta {
 export const STATE_META: Record<DecisionState, StateMeta> = {
   CONFIRMED_LOW: {
     label: "Confirmed low",
-    color: "#2E9E7E",
+    color: "#B7CDB0",
     hatched: false,
     blurb: "Quiet, and we can see well enough to say so.",
   },
   CONFIRMED_HIGH: {
     label: "Confirmed high",
-    color: "#D9564C",
+    color: "#C0503A",
     hatched: false,
     blurb: "Corroborated danger. Act now.",
   },
   SUSPECTED: {
     label: "Suspected",
-    color: "#D99A2B",
+    color: "#E3B865",
     hatched: true,
     blurb: "Signs of harm, but the evidence base is thin or conflicting.",
   },
   UNKNOWN: {
     label: "Unknown",
-    color: "#59646F",
+    color: "#F2F1EB",
     hatched: true,
     blurb: "Not enough trustworthy evidence to call it either way.",
   },

@@ -32,7 +32,7 @@
   color: var(--ink-dim);
   white-space: nowrap;
 }
-.pane-read .numeric { font-family: var(--font-mono); color: var(--ink); }
+.pane-read .numeric { font-family: var(--font-label); color: var(--ink); }
 .pane-read .sep { padding: 0 .4rem; color: var(--ink-faint); }
 
 /* The count that carries the argument. */

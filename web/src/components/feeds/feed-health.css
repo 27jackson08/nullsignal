@@ -32,10 +32,10 @@
 .feed-health > button:hover { background: var(--surface-raised); }
 
 .feed-health .verdict {
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: .68rem;
   letter-spacing: .06em;
-  color: var(--state-confirmed-low);
+  color: var(--state-low-ink);
 }
 .feed-health .verdict.is-degraded { color: var(--state-suspected); }
 
@@ -57,7 +57,7 @@
   margin-bottom: var(--space-2);
 }
 .feed-name { font-size: .84rem; font-weight: 600; }
-.feed-polls { font-family: var(--font-mono); font-size: .66rem; color: var(--ink-faint); }
+.feed-polls { font-family: var(--font-label); font-size: .66rem; color: var(--ink-faint); }
 
 .feed-detail ul { list-style: none; margin: 0; padding: 0; }
 .feed-detail li {
@@ -87,7 +87,7 @@
 .is-unchecked .det-name { color: var(--ink-faint); }
 .det-detail {
   grid-column: 2;
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: .62rem;
   line-height: 1.5;
   color: var(--ink-faint);

@@ -25,8 +25,8 @@
   appearance: none;
   border: 1px solid var(--rule-strong);
   background: var(--accent);
-  color: #0B0E13;
-  font-family: var(--font-mono);
+  color: var(--surface);
+  font-family: var(--font-label);
   font-size: .7rem;
   font-weight: 600;
   letter-spacing: .06em;
@@ -71,15 +71,15 @@
   font-size: .8rem;
 }
 .readout .hour {
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-weight: 600;
   color: var(--accent);
   min-width: 5rem;
 }
 .faults { display: flex; gap: var(--space-2); flex-wrap: wrap; }
-.faults.quiet { color: var(--ink-faint); font-family: var(--font-mono); font-size: .7rem; }
+.faults.quiet { color: var(--ink-faint); font-family: var(--font-label); font-size: .7rem; }
 .fault-chip {
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: .64rem;
   letter-spacing: .05em;
   padding: .16rem .45rem;

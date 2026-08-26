@@ -6,9 +6,11 @@
  *  approach and the wrong one: the strokes do not meet across tile edges and
  *  the result reads as a field of dashes rather than continuous lines. */
 
-const SPACING = 7;
-const LINE_WIDTH = 1.6;
-const LINE_COLOUR = "rgba(5, 8, 12, 0.72)";
+const SPACING = 6;
+const LINE_WIDTH = 1.2;
+/* Ink on paper. Finer than a screen hatch would be, because the reference is
+   an engraved survey plate rather than a UI texture. */
+const LINE_COLOUR = "rgba(20, 22, 26, 0.62)";
 const ROTATION_DEGREES = 45;
 
 export function createHatchPattern(

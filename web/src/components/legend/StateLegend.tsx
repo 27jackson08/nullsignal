@@ -60,11 +60,11 @@ export function StateLegend({ summary, mode, zones, view }: StateLegendProps) {
         <p className="label">Where the engines differ</p>
         <ul>
           <li>
-            <span className="swatch" style={{ background: "#D9564C" }} />
+            <span className="swatch" style={{ background: "var(--state-confirmed-high)" }} />
             <span className="name">Baseline says safe, we don&rsquo;t</span>
           </li>
           <li>
-            <span className="swatch" style={{ background: "#D99A2B" }} />
+            <span className="swatch" style={{ background: "var(--state-suspected)" }} />
             <span className="name">Other disagreement</span>
           </li>
           <li>

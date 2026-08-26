@@ -1,32 +1,54 @@
 /* NullSignal design tokens.
-   Committed to a single dark direction on purpose: this is a 24/7 municipal
-   operations console, read in a dim room next to other monitors, not a
-   marketing page. Light mode is not an omission here, it is a decision. */
+   ---------------------------------------------------------------------------
+   Set as a municipal record rather than a monitoring console. The earlier dark
+   palette was the default any dark dashboard arrives at -- near-black ground,
+   one cool accent, mono micro-labels -- and it said nothing about New York,
+   about municipal work, or about this problem.
+
+   Ink on paper says something. These findings are meant to be printed, carried
+   into a shift briefing and cited, and the map is a survey plate: hatching has
+   marked uncertain ground on printed maps for two centuries, which is exactly
+   the claim this product makes.
+
+   Public Sans is the typeface of the US Web Design System, drawn for
+   government documents. There is deliberately no monospace anywhere: a grid of
+   tabular figures does the work a terminal font was only imitating. */
 :root {
-  --ground:        #0B0E13;
-  --surface:       #12171F;
-  --surface-raised:#1A212B;
-  --rule:          #232C38;
-  --rule-strong:   #34404F;
+  --ground:        #E4E4DC;  /* the plate the map is printed on */
+  --surface:       #F8F8F5;  /* paper */
+  --surface-raised:#FDFDFB;  /* a sheet laid on the paper */
+  --rule:          #D4D5CF;
+  --rule-strong:   #A9AAA2;
 
-  --ink:           #E6EBF2;
-  --ink-dim:       #97A3B4;
-  /* Lightened from #616D7D, which measured 3.42:1 against the panel surface
-     and 3.08:1 against the raised one -- below the 4.5:1 AA floor for text at
-     these sizes, and this token carries every micro-label in the interface.
-     Now 5.68:1 and 5.12:1. */
-  --ink-faint:     #8592A3;
+  --ink:           #14161A;
+  --ink-dim:       #4C525A;
+  /* Measured, not estimated. #6E747C came out at 4.43:1 on paper, and the
+     labels that sit over the map plate rather than over paper are darker
+     still, so this clears the 4.5 AA floor against the plate as well. */
+  --ink-faint:     #5C626A;
 
-  --accent:        #7FB2E0;
+  /* Municipal navy. Structure and provenance only, never emphasis. */
+  --accent:        #1B3F6B;
+  /* The one alarm colour, used only where the record makes an accusation. */
+  --alarm:         #A82D17;
 
-  /* Risk hue. These four are semantic and never used decoratively. */
-  --state-unknown:        #59646F;
-  --state-confirmed-low:  #2E9E7E;
-  --state-suspected:      #D99A2B;
-  --state-confirmed-high: #D9564C;
+  /* Risk hue. Semantic, never decorative, and tinted for a light ground: at
+     2,325 tracts a saturated fill would drown the hatch that carries the
+     actual argument. */
+  --state-unknown:        #F2F1EB;
+  --state-confirmed-low:  #B7CDB0;
+  --state-suspected:      #E3B865;
+  --state-confirmed-high: #C0503A;
 
-  --font-display: "Archivo", -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* Fills are tinted for a light ground, which makes them far too pale to set
+     type in. Text that carries a state uses these instead. */
+  --state-low-ink:        #2C6E49;
+  --state-high-ink:       #A82D17;
+
+  --font-display: "Public Sans", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  /* Small caps labels. Sans, spaced -- the role the mono font used to play. */
+  --font-label: "Public Sans", -apple-system, "Helvetica Neue", Arial, sans-serif;
 
   --space-1: .25rem;  --space-2: .5rem;   --space-3: .75rem;
   --space-4: 1rem;    --space-5: 1.5rem;  --space-6: 2rem;

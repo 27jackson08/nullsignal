@@ -18,10 +18,10 @@ export type ViewMode =
  *  to say. Sharing a palette between them would blur exactly the distinction
  *  the scenario exists to draw. */
 const TRUTH_FILL: Record<Truth, string> = {
-  normal: "#1D2530",
-  heat: "#8A6A1F",
-  heat_stranded: "#B33A31",
-  local_fault: "#2F4A63",
+  normal: "#DFDFD6",
+  heat: "#DCA94F",
+  heat_stranded: "#B84630",
+  local_fault: "#8CA6C2",
 };
 
 interface ZoneMapProps {
@@ -39,9 +39,12 @@ interface ZoneMapProps {
 }
 
 const ZOOM_RANGE: [number, number] = [1, 40];
-const AGREEMENT_FILL = "#1D2530";
-const GROUND = "#0B0E13";
-const BORDER = "#0B0E13";
+const AGREEMENT_FILL = "#E4E4DC";
+const GROUND = "#E4E4DC";
+/* Ink, held back by alpha rather than by being made grey. On paper the tract
+   boundaries are the plate's engraving: at 0.4px of a flat mid-grey they
+   disappeared entirely and the city read as one undivided mass. */
+const BORDER = "rgba(20, 22, 26, 0.34)";
 const PADDING = 8;
 
 /** Hue encodes the risk estimate and never encodes sufficiency -- that is the
@@ -202,7 +205,7 @@ export function ZoneMap({
       const toPath = geoPath(projection, ctx);
 
       // Pass 1: hue.
-      ctx.lineWidth = 0.4 / transform.k;
+      ctx.lineWidth = 0.55 / transform.k;
       ctx.strokeStyle = BORDER;
       zones.features.forEach((feature) => {
         ctx.beginPath();
@@ -240,14 +243,14 @@ export function ZoneMap({
         ctx.stroke();
       };
       if (hoveredIndex !== null && hoveredIndex !== selectedIndex) {
-        outline(hoveredIndex, "#97A3B4", 1.4);
+        outline(hoveredIndex, "#4C525A", 1.4);
       }
       // Keyboard focus is drawn thicker than hover and in the accent, so it is
       // distinguishable without relying on a pointer being present.
       if (focusedIndex !== null && focusedIndex !== selectedIndex) {
-        outline(focusedIndex, "#7FB2E0", 2.4);
+        outline(focusedIndex, "#1B3F6B", 2.4);
       }
-      if (selectedIndex >= 0) outline(selectedIndex, "#E6EBF2", 2);
+      if (selectedIndex >= 0) outline(selectedIndex, "#14161A", 2);
 
       ctx.restore();
     }

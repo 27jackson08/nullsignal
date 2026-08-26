@@ -25,12 +25,12 @@
 .verdict-chip {
   display: inline-block;
   padding: .28rem .6rem;
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: .68rem;
   font-weight: 600;
   letter-spacing: .1em;
   text-transform: uppercase;
-  color: #0B0E13;
+  color: var(--surface);
 }
 .verdict-chip.is-hatched {
   background-image: repeating-linear-gradient(
@@ -78,7 +78,7 @@
 
 .ceiling-note {
   margin: var(--space-2) 0 0;
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: .68rem;
   color: var(--state-suspected);
 }
@@ -95,7 +95,7 @@
 }
 .facts > div:last-child { border-bottom: 0; }
 .facts dt { color: var(--ink-dim); }
-.facts dd { margin: 0; font-family: var(--font-mono); font-size: .78rem; }
+.facts dd { margin: 0; font-family: var(--font-label); font-size: .78rem; }
 
 .panel-empty { color: var(--ink-dim); }
 .panel-empty p:last-child {
@@ -106,8 +106,8 @@
 }
 
 .panel-error {
-  color: var(--state-confirmed-high);
-  font-family: var(--font-mono);
+  color: var(--state-high-ink);
+  font-family: var(--font-label);
   font-size: .8rem;
   line-height: 1.5;
 }
@@ -171,7 +171,7 @@
 .check-meta { display: flex; gap: var(--space-5); margin: 0; }
 .check-meta div { display: flex; flex-direction: column; gap: .1rem; }
 .check-meta dt {
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: .6rem;
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -193,7 +193,7 @@
 }
 .explanation-source {
   margin: var(--space-3) 0 0;
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: .62rem;
   line-height: 1.55;
   letter-spacing: .03em;

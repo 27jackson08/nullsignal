@@ -34,13 +34,13 @@
   );
 }
 
-.meter-value { color: var(--ink-faint); font-family: var(--font-mono); font-size: .72rem; text-align: right; }
+.meter-value { color: var(--ink-faint); font-family: var(--font-label); font-size: .72rem; text-align: right; }
 
 .meter-row.is-unmeasured .meter-label { color: var(--ink-faint); }
 
 .meter-note {
   grid-column: 1 / -1;
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: .62rem;
   letter-spacing: .05em;
   color: var(--ink-faint);

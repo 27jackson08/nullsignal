@@ -16,7 +16,7 @@
   color: var(--ink-dim);
 }
 .scoreboard .at-risk .numeric {
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   color: var(--ink);
   font-size: 1.05rem;
   margin-right: .45rem;
@@ -38,7 +38,7 @@
 
 .verdicts .who {
   margin: 0;
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: .66rem;
   letter-spacing: .13em;
   text-transform: uppercase;
@@ -52,12 +52,12 @@
   letter-spacing: -.03em;
   margin: var(--space-3) 0 var(--space-2);
 }
-.scoreboard .bad { color: var(--state-confirmed-high); }
-.scoreboard .good { color: var(--state-confirmed-low); }
+.scoreboard .bad { color: var(--state-high-ink); }
+.scoreboard .good { color: var(--state-low-ink); }
 .verdicts .what { margin: 0; font-size: .82rem; color: var(--ink-dim); }
 .verdicts .residents {
   margin: var(--space-2) 0 0;
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: .72rem;
   color: var(--ink-faint);
 }
@@ -70,7 +70,7 @@
 }
 .scoreboard th {
   text-align: right;
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: .62rem;
   letter-spacing: .12em;
   text-transform: uppercase;

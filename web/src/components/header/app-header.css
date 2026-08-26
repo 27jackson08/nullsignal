@@ -8,10 +8,10 @@
   align-items: center;
   gap: var(--space-5);
   padding: 0 var(--space-5);
-  background: #F8F8F5;
-  color: #14161A;
-  border-bottom: 3px solid #14161A;
-  font-family: "Public Sans", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+  border-bottom: 3px solid var(--ink);
+  font-family: var(--font-display);
   font-variant-numeric: tabular-nums;
   min-width: 0;
 }
@@ -21,14 +21,14 @@
   font-weight: 800;
   letter-spacing: -.035em;
   margin: 0;
-  color: #14161A;
+  color: var(--ink);
 }
 .brand .tagline {
-  font-family: "Source Serif 4", Georgia, serif;
+  font-family: var(--font-serif);
   font-style: italic;
   font-size: .8rem;
   letter-spacing: 0;
-  color: #4C525A;
+  color: var(--ink-dim);
   margin: .1rem 0 0;
 }
 
@@ -38,32 +38,32 @@
   gap: var(--space-2);
   margin-left: auto;
   padding-left: var(--space-5);
-  border-left: 1px solid #D4D5CF;
+  border-left: 1px solid var(--rule);
 }
 .headline-stat .label {
   font-size: .62rem; font-weight: 700; letter-spacing: .13em;
-  text-transform: uppercase; color: #767D86;
+  text-transform: uppercase; color: var(--ink-faint);
 }
 .headline-stat strong {
   font-size: 1.7rem;
   font-weight: 800;
   letter-spacing: -.03em;
-  color: #A82D17;
+  color: var(--alarm);
   line-height: 1;
 }
-.headline-stat .denom { font-size: .78rem; color: #767D86; }
+.headline-stat .denom { font-size: .78rem; color: var(--ink-faint); }
 
 .mode-switch {
   display: flex;
-  border: 1px solid #14161A;
+  border: 1px solid var(--ink);
   overflow: hidden;
 }
 .mode-switch button {
   appearance: none;
   border: 0;
-  border-right: 1px solid #D4D5CF;
+  border-right: 1px solid var(--rule);
   background: transparent;
-  color: #4C525A;
+  color: var(--ink-dim);
   font-size: .72rem;
   font-weight: 600;
   letter-spacing: .04em;
@@ -73,8 +73,8 @@
               color var(--duration-fast) var(--ease-out);
 }
 .mode-switch button:last-child { border-right: 0; }
-.mode-switch button:hover { background: #EFEFEA; color: #14161A; }
-.mode-switch button.is-active { background: #14161A; color: #F8F8F5; }
+.mode-switch button:hover { background: var(--ground); color: var(--ink); }
+.mode-switch button.is-active { background: var(--ink); color: var(--surface); }
 
 @media (max-width: 900px) {
   .headline-stat { display: none; }
@@ -105,27 +105,27 @@
 
 .app-header .label {
   font-size: .62rem; font-weight: 700; letter-spacing: .13em;
-  text-transform: uppercase; color: #767D86;
+  text-transform: uppercase; color: var(--ink-faint);
 }
 .scenario-picker { display: flex; flex-direction: column; gap: .15rem; }
 .scenario-picker select {
   appearance: none;
   background: transparent;
-  color: #14161A;
+  color: var(--ink);
   border: 0;
-  border-bottom: 1px solid #14161A;
+  border-bottom: 1px solid var(--ink);
   font-family: inherit;
   font-size: .78rem;
   font-weight: 600;
   padding: .3rem 1.5rem .3rem 0;
   cursor: pointer;
-  background-image: linear-gradient(45deg, transparent 50%, #14161A 50%),
-                    linear-gradient(135deg, #14161A 50%, transparent 50%);
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%),
+                    linear-gradient(135deg, var(--ink) 50%, transparent 50%);
   background-position: calc(100% - 14px) 55%, calc(100% - 9px) 55%;
   background-size: 5px 5px, 5px 5px;
   background-repeat: no-repeat;
 }
-.scenario-picker select:hover { border-bottom-color: #A82D17; color: #A82D17; }
+.scenario-picker select:hover { border-bottom-color: var(--alarm); color: var(--alarm); }
 
 @media (max-width: 1100px) { .scenario-picker { display: none; } }
 
@@ -144,7 +144,7 @@
   letter-spacing: .1em;
   text-transform: uppercase;
   background: none;
-  color: #767D86;
+  color: var(--ink-faint);
   border: 0;
   border-bottom: 3px solid transparent;
   margin-bottom: -3px;
@@ -153,14 +153,14 @@
               border-color var(--duration-fast) var(--ease-out);
 }
 
-.surface-switch button:hover { color: #14161A; }
+.surface-switch button:hover { color: var(--ink); }
 
 .surface-switch button.is-active {
-  color: #A82D17;
-  border-bottom-color: #A82D17;
+  color: var(--alarm);
+  border-bottom-color: var(--alarm);
 }
 
 .surface-switch button:focus-visible {
-  outline: 2px solid #1B3F6B;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }

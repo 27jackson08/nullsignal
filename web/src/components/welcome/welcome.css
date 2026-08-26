@@ -7,7 +7,7 @@
   padding: var(--space-5);
   /* A short viewport must never bury the primary action below the fold. */
   overflow-y: auto;
-  background: color-mix(in oklab, var(--ground) 78%, transparent);
+  background: color-mix(in oklab, var(--ink) 42%, transparent);
   backdrop-filter: blur(2px);
   animation: welcome-in var(--duration-fast) var(--ease-out);
 }
@@ -24,12 +24,12 @@
   border: 1px solid var(--rule-strong);
   /* The accent rule reads as the same signal the header uses, rather than as
      decoration: this card is the entry point to the same argument. */
-  border-top: 2px solid var(--accent);
-  box-shadow: 0 24px 60px -20px rgb(0 0 0 / 65%);
+  border-top: 3px solid var(--ink);
+  box-shadow: 0 20px 50px -22px rgb(20 22 26 / 40%);
 }
 
 .welcome-eyebrow {
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: .72rem;
   letter-spacing: .14em;
   text-transform: uppercase;
@@ -38,6 +38,7 @@
 
 .welcome h2 {
   font-family: var(--font-display);
+  font-weight: 800;
   font-size: clamp(1.4rem, 1.1rem + 1.2vw, 1.9rem);
   line-height: 1.15;
   text-wrap: balance;
@@ -62,7 +63,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: .78rem;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -76,13 +77,13 @@
 .swatch-unknown {
   background: var(--state-unknown);
   background-image: repeating-linear-gradient(
-    45deg, transparent 0 3px, rgb(255 255 255 / 28%) 3px 4px);
+    45deg, transparent 0 3px, rgb(20 22 26 / 55%) 3px 4px);
 }
 
 .welcome-stat { font-size: .92rem; }
 .welcome-stat strong {
-  color: var(--state-confirmed-high);
-  font-family: var(--font-mono);
+  color: var(--state-high-ink);
+  font-family: var(--font-label);
   font-size: 1.05rem;
 }
 
@@ -98,7 +99,7 @@
    specificity and the accent fill silently never applies. */
 .welcome-actions button {
   padding: var(--space-3) var(--space-4);
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: .82rem;
   letter-spacing: .04em;
   border: 1px solid var(--rule-strong);
@@ -111,14 +112,14 @@
 }
 
 .welcome-actions .welcome-primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--ground);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface);
   font-weight: 600;
 }
 
 .welcome-actions .welcome-primary:hover {
-  background: color-mix(in oklab, var(--accent) 86%, white);
+  background: var(--alarm); border-color: var(--alarm);
 }
 
 .welcome-actions .welcome-secondary:hover {
