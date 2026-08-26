@@ -552,9 +552,15 @@ The offline claim is tested, not asserted. A fresh clone with no network:
 ```
 git clone … && uv venv && uv pip install -e ".[dev]"
 uv run nullsignal build     # 4.5s, 155 files, 28MB, committed data only
-uv run pytest               # 162 passed
+uv run pytest               # 164 passed
 uv run nullsignal eval      # identical to the working directory
 ```
+
+The scoreboard is anchored to when the snapshot was taken, not to when the
+evaluation runs. Without that it drifted as the fixtures aged — 311 freshness
+decays against wall clock, so the unresolved rate crept from 24.7% to 27.0% at
+a week and 28.0% at a month. A number that changes depending on the calendar is
+an anecdote, so it is now a property of the scenario and the snapshot alone.
 
 This caught a real bug that a working directory hides. The weather join
 filtered on wall-clock `now()`, so a committed snapshot silently stopped
