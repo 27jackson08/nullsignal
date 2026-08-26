@@ -70,7 +70,15 @@ def snapshot_taken_at(raw_dir: Path, db_path: Path):
 
     from ..store import connect
 
-    con = connect(db_path, read_only=True)
+    # The connection itself can fail -- an absent store, a read-only open of a
+    # file that is not there -- so it sits inside the guard rather than beside
+    # it. Returning None here means "we do not know when this was taken", which
+    # the caller handles; raising would take the whole evaluation down over a
+    # missing timestamp.
+    try:
+        con = connect(db_path, read_only=True)
+    except Exception:  # noqa: BLE001
+        return None
     try:
         row = con.execute("SELECT MAX(created_at) FROM service_requests").fetchone()
     except Exception:  # noqa: BLE001
