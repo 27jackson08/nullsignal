@@ -8,7 +8,7 @@ from nullsignal.inference.hypotheses import World
 from nullsignal.sim import run as simrun
 from nullsignal.sim.injectors import FailureMode, Injection, apply
 from nullsignal.sim.scenario import Event, Scenario, WorldState, is_harmful, true_world
-from nullsignal.types import Reliability
+from nullsignal.types import DecisionState, Reliability
 
 from helpers import make_evidence, make_propensity, make_zone
 
@@ -64,8 +64,16 @@ def test_silent_failure_beats_baseline():
     """
     board = scoreboard.score(simrun.run(SILENT_FAILURE, synthetic_city()))
 
-    assert board.baseline.false_reassurance_rate > 0.5
+    # Stated as a margin rather than an absolute rate. The absolute number
+    # moves with the fixture and with how competent the baseline is, and a
+    # baseline that got *better* should not fail the project's core claim --
+    # what has to hold is that thresholds falsely reassure and NullSignal
+    # does not.
     assert board.nullsignal.false_reassurance_rate < 0.05
+    assert board.baseline.false_reassurance_rate > 0.25
+    assert (board.baseline.false_reassurance_rate
+            - board.nullsignal.false_reassurance_rate) > 0.25
+
     assert board.nullsignal.warning_hours > 0, "must react before harm begins"
     assert board.baseline.warning_hours == 0
 
@@ -320,3 +328,64 @@ def test_the_snapshot_records_when_it_was_taken(tmp_path):
     from nullsignal.eval.report import snapshot_taken_at
 
     assert snapshot_taken_at(tmp_path, tmp_path / "missing.duckdb") is None
+
+
+def test_baseline_responds_to_the_world_it_is_shown():
+    """The baseline must threshold on a signal the simulation actually moves.
+
+    It previously compared the 60-day historical report total against its
+    threshold. Nothing in any scenario writes that column, so its alert count
+    was frozen across every tick by construction -- it could neither escalate
+    into a surge nor notice reporting collapsing underneath it. A baseline that
+    cannot react is a straw man, and beating one proves nothing.
+    """
+    result = simrun.run(SILENT_FAILURE, synthetic_city())
+
+    alerting = {}
+    for record in result.records:
+        if record.baseline_state is DecisionState.CONFIRMED_HIGH:
+            alerting[record.hour] = alerting.get(record.hour, 0) + 1
+
+    assert len(set(alerting.values())) > 1, (
+        "baseline alert count never changes -- it is reading a static field"
+    )
+
+
+def test_baseline_stands_down_when_the_evidence_is_taken_away():
+    """Suppressing reports must make the threshold dashboard *less* alarmed.
+
+    This is the failure the project exists to name: the dashboard reads the
+    disappearance of evidence as the emergency resolving, and de-alerts while
+    the danger is still there.
+    """
+    scenario = Scenario(
+        name="test-suppression",
+        description="reports vanish while the harm continues",
+        duration_hours=12,
+        tick_hours=1.0,
+        events=(
+            # Held below the 95F advisory line on purpose. Above it the
+            # dashboard's heat branch alerts on everything regardless of
+            # reports, which would mask the effect under test.
+            Event(at_hour=0, heat_index_f=86.0),
+            Event(at_hour=4, heat_index_f=92.0),
+            Event(at_hour=5, transit_disrupted=True),
+            Event(at_hour=8, inject=Injection("311", FailureMode.SUPPRESS)),
+        ),
+    )
+    result = simrun.run(scenario, synthetic_city())
+
+    def alerting_at(hour: float) -> int:
+        return sum(1 for r in result.records
+                   if r.hour == hour
+                   and r.baseline_state is DecisionState.CONFIRMED_HIGH)
+
+    def harmful_at(hour: float) -> int:
+        return sum(1 for r in result.records if r.hour == hour and r.truth_harmful)
+
+    before, after = alerting_at(7), alerting_at(11)
+    assert harmful_at(11) >= harmful_at(7), "harm must not have receded"
+    assert after < before, (
+        f"baseline alerted on {before} zones before suppression and {after} "
+        f"after, while the danger did not recede"
+    )

@@ -359,7 +359,9 @@ def get_scenario(name: str) -> dict:
     if name in state.playback_cache:
         return state.playback_cache[name]
     try:
-        payload = scenario_api.playback(SCENARIOS_DIR, name, state.evidence)
+        from ..eval.report import _summer_normal
+        payload = scenario_api.playback(SCENARIOS_DIR, name, state.evidence,
+                                        climate_normal=_summer_normal(DB_PATH))
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"no scenario named {name!r}") from None
     state.playback_cache[name] = payload

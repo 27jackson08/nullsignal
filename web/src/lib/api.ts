@@ -4,6 +4,28 @@ import type { DecisionState } from "./states";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
 
+/**
+ * A static build serves pre-computed JSON instead of calling the engine.
+ *
+ * Every response is derived from a committed snapshot and never varies between
+ * requests, so the whole API can be baked to files (`nullsignal export`) and
+ * hosted anywhere. Same client code, no backend.
+ */
+const IS_STATIC = import.meta.env.VITE_STATIC === "1";
+
+/**
+ * Map a live endpoint onto the file the export wrote for it.
+ *
+ * The export mirrors the route tree, so every path becomes itself plus
+ * `.json`. Query strings are dropped: the only one in use is the queue limit,
+ * and the export writes the full queue for the client to slice.
+ */
+function staticPath(path: string): string {
+  const [route] = path.split("?");
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  return `${base}${route}.json`;
+}
+
 export interface ZoneProperties {
   geoid: string;
   name: string;
@@ -118,8 +140,9 @@ export interface Summary {
   };
 }
 
-async function getJson<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`);
+export async function apiGet<T>(path: string): Promise<T> {
+  const url = IS_STATIC ? staticPath(path) : `${API_BASE}${path}`;
+  const response = await fetch(url);
   if (!response.ok) {
     // Surfaced to the user rather than swallowed: a blank map with no
     // explanation is precisely the failure mode this project is about.
@@ -129,10 +152,10 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 export const fetchZones = () =>
-  getJson<ZoneCollection>("/api/zones");
-export const fetchSummary = () => getJson<Summary>("/api/summary");
+  apiGet<ZoneCollection>("/api/zones");
+export const fetchSummary = () => apiGet<Summary>("/api/summary");
 export const fetchZoneDetail = (geoid: string) =>
-  getJson<ZoneDetail>(`/api/zones/${geoid}`);
+  apiGet<ZoneDetail>(`/api/zones/${geoid}`);
 
 export interface ScenarioSummary {
   name: string;
@@ -142,7 +165,7 @@ export interface ScenarioSummary {
 }
 
 export const fetchScenarios = () =>
-  getJson<{ scenarios: ScenarioSummary[] }>("/api/scenarios").then((r) => r.scenarios);
+  apiGet<{ scenarios: ScenarioSummary[] }>("/api/scenarios").then((r) => r.scenarios);
 
 export interface QueueEntry {
   geoid: string;
@@ -159,5 +182,8 @@ export interface QueueEntry {
   next_check_minutes: number | null;
 }
 
+// The static export writes the whole ranking, so the limit is applied here
+// rather than by the server. Slicing twice is harmless.
 export const fetchQueue = (limit = 8) =>
-  getJson<{ zones: QueueEntry[] }>(`/api/queue?limit=${limit}`).then((r) => r.zones);
+  apiGet<{ zones: QueueEntry[] }>(`/api/queue?limit=${limit}`)
+    .then((r) => r.zones.slice(0, limit));

@@ -47,13 +47,14 @@ def playback(
     directory: Path,
     name: str,
     evidence: list[ZoneEvidence],
+    climate_normal: dict | None = None,
 ) -> dict:
     path = directory / f"{name}.yaml"
     if not path.exists():
         raise FileNotFoundError(name)
 
     loaded = scenario_module.load(path)
-    result = simrun.run(loaded, evidence)
+    result = simrun.run(loaded, evidence, climate_normal)
 
     zone_order = [item.zone.geoid for item in evidence]
     index = {geoid: position for position, geoid in enumerate(zone_order)}

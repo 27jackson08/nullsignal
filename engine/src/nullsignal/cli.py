@@ -37,6 +37,11 @@ def main(argv: list[str] | None = None) -> int:
     ev.add_argument("--scenario", default="heatwave-transit-silent-failure")
     ev.add_argument("--list", action="store_true", help="list available scenarios")
 
+    export = sub.add_parser("export", help="bake the API to static JSON")
+    export.add_argument("--out", default="web/public/api")
+    export.add_argument("--scenario", action="append",
+                        help="limit to named scenarios (repeatable)")
+
     serve = sub.add_parser("serve", help="run the API")
     serve.add_argument("--port", type=int, default=8000)
     serve.add_argument("--reload", action="store_true")
@@ -72,6 +77,17 @@ def main(argv: list[str] | None = None) -> int:
         from .eval.report import run_evaluation
         return run_evaluation(REPO_ROOT / "scenarios", DATA_DIR / DB_FILENAME,
                               RAW_DIR, args.scenario, list_only=args.list)
+
+    if args.command == "export":
+        from .api.export import export as run_export
+        out = (REPO_ROOT / args.out).resolve()
+        written = run_export(out, REPO_ROOT / "scenarios",
+                             scenario_names=args.scenario)
+        print()
+        for key, value in written.items():
+            print(f"  {key:16} {value:>10,}")
+        print(f"\n  written to {out}")
+        return 0
 
     if args.command == "serve":
         import uvicorn

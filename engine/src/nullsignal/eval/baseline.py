@@ -42,8 +42,15 @@ def calibrate(evidence: list[ZoneEvidence]) -> BaselineThresholds:
 
     An absolute count cannot transfer between cities, or even between seasons:
     at a fixed threshold of 40 reports, 77% of NYC tracts alert simultaneously.
+
+    Calibrated on the recent window, which is the number `assess` compares
+    against -- the same live signal NullSignal reads. Thresholding the 60-day
+    historical total instead would make the dashboard incapable of responding
+    to anything happening now, which would be a straw man rather than a
+    baseline.
     """
-    counts = [item.report_count for item in evidence if item.zone.population > 0]
+    counts = [item.recent_report_count for item in evidence
+              if item.zone.population > 0]
     if len(counts) < 10:
         return BaselineThresholds(report_count=FALLBACK_REPORT_THRESHOLD)
 
@@ -58,7 +65,7 @@ def assess(
     """Threshold logic. Note there is no branch that can return UNKNOWN."""
     limits = thresholds or BaselineThresholds(report_count=FALLBACK_REPORT_THRESHOLD)
 
-    reports_are_elevated = evidence.report_count >= limits.report_count
+    reports_are_elevated = evidence.recent_report_count >= limits.report_count
     heat_is_elevated = (
         evidence.heat_index_f is not None
         and evidence.heat_index_f >= limits.heat_index_f

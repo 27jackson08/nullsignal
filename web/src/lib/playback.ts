@@ -1,3 +1,4 @@
+import { apiGet } from "./api";
 import type { DecisionState } from "./states";
 
 /** Ground truth, revealed only when the operator asks for it. */
@@ -76,8 +77,6 @@ export class TickView {
   }
 }
 
-export async function fetchPlayback(base: string, name: string): Promise<Playback> {
-  const response = await fetch(`${base}/api/scenarios/${name}`);
-  if (!response.ok) throw new Error(`scenario ${name}: ${response.status}`);
-  return response.json() as Promise<Playback>;
+export function fetchPlayback(name: string): Promise<Playback> {
+  return apiGet<Playback>(`/api/scenarios/${name}`);
 }

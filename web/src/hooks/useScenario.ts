@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { TickView, fetchPlayback, type Playback } from "../lib/playback";
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
 const PLAY_INTERVAL_MS = 900;
 
 export function useScenario() {
@@ -19,7 +18,7 @@ export function useScenario() {
     setError(null);
     setPlayback(null);
 
-    fetchPlayback(API_BASE, name)
+    fetchPlayback(name)
       .then((loaded) => { if (!cancelled) { setPlayback(loaded); setTick(0); } })
       .catch((err: Error) => { if (!cancelled) setError(err.message); });
 

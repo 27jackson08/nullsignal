@@ -72,6 +72,7 @@ def run(
 
     last_good: dict[str, ZoneEvidence] = {}
     fault_ticks: dict[str, int] = {}
+    thresholds: baseline.BaselineThresholds | None = None
 
     for tick in range(scenario.tick_count):
         hour = scenario.hour_of(tick)
@@ -81,8 +82,8 @@ def run(
         for key in state.active:
             fault_ticks[key] = fault_ticks.get(key, 0) + 1
 
-        # Both engines are calibrated on the same corrupted cohort, so neither
-        # gets an advantage from seeing a cleaner distribution.
+        # Both engines see the same corrupted cohort, so neither gets an
+        # advantage from a cleaner view of the world.
         observed = []
         for item in base_evidence:
             truth = true_world(state, item.zone)
@@ -101,7 +102,16 @@ def run(
             apply_to_cohort([e for _, e in observed]), climate_normal)
         observed = list(zip((t for t, _ in observed), checked))
 
-        thresholds = baseline.calibrate([e for _, e in observed])
+        # Calibrated once, on the opening distribution, and held for the rest
+        # of the run. Re-deriving the percentile every tick would give the
+        # baseline a property no deployed dashboard has: its alert count would
+        # stay pinned at the top decile no matter how bad the city got, so it
+        # could neither escalate into a worsening heatwave nor notice reporting
+        # collapsing underneath it. Real thresholds are tuned on normal
+        # conditions and then left alone.
+        if thresholds is None:
+            thresholds = baseline.calibrate([e for _, e in observed])
+
         faults = tuple(sorted(state.active))
 
         for truth, corrupted in observed:
