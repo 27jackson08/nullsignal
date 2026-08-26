@@ -5,6 +5,7 @@ import { StateLegend } from "./components/legend/StateLegend";
 import { EvidencePanel } from "./components/panel/EvidencePanel";
 import { FeedHealthPanel } from "./components/feeds/FeedHealthPanel";
 import { ZoneMap, type ViewMode } from "./components/map/ZoneMap";
+import { CompareView } from "./components/compare/CompareView";
 import { useSelectedZone } from "./hooks/useSelectedZone";
 import { useScenario } from "./hooks/useScenario";
 import { useZones } from "./hooks/useZones";
@@ -51,7 +52,11 @@ export default function App() {
           {isLoading && !error && (
             <div className="boot-message"><p className="label">Loading tracts…</p></div>
           )}
-          {zones && (
+          {zones && mode === "compare" && (
+            <CompareView zones={zones} summary={summary} view={scenario.view}
+                         selectedGeoid={selectedGeoid} onSelect={setSelectedGeoid} />
+          )}
+          {zones && mode !== "compare" && (
             <>
               <ZoneMap zones={zones} mode={mode} selectedGeoid={selectedGeoid}
                        onSelect={setSelectedGeoid} view={scenario.view} />

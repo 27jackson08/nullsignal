@@ -1,0 +1,46 @@
+.compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--rule);
+  min-height: 0;
+  height: 100%;
+}
+
+.pane {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+  min-height: 0;
+  background: var(--ground);
+}
+
+.pane > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule);
+}
+
+.pane-read {
+  margin: 0;
+  font-size: .76rem;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+.pane-read .numeric { font-family: var(--font-mono); color: var(--ink); }
+.pane-read .sep { padding: 0 .4rem; color: var(--ink-faint); }
+
+/* The count that carries the argument. */
+.pane-read .emphasis { color: var(--state-suspected); font-weight: 600; }
+
+/* A hairline on our side only, so the eye knows which pane is the claim. */
+.pane.is-ours > header { border-bottom-color: var(--accent); }
+
+@media (max-width: 900px) {
+  .compare { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+}

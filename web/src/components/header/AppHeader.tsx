@@ -12,6 +12,7 @@ interface AppHeaderProps {
 }
 
 const MODES: { id: ViewMode; label: string; hint: string; scenarioOnly?: boolean }[] = [
+  { id: "compare", label: "Side by side", hint: "Both engines on the same evidence, same moment" },
   { id: "nullsignal", label: "NullSignal", hint: "Risk and sufficiency as separate channels" },
   { id: "baseline", label: "Baseline", hint: "A conventional threshold dashboard" },
   { id: "disagreement", label: "Disagreement", hint: "Where the two engines differ" },

@@ -10,7 +10,8 @@ import type { ZoneCollection, ZoneProperties } from "../../lib/api";
 import type { TickView, Truth } from "../../lib/playback";
 import "./zone-map.css";
 
-export type ViewMode = "nullsignal" | "baseline" | "disagreement" | "truth";
+export type ViewMode =
+  | "nullsignal" | "baseline" | "disagreement" | "truth" | "compare";
 
 /** Ground truth is coloured on its own scale, not the decision palette.
  *  Truth is what *is*; the four decision states are what a system was willing
@@ -30,6 +31,11 @@ interface ZoneMapProps {
   onSelect: (geoid: string | null) => void;
   /** When a scenario is playing, states come from the tick rather than live. */
   view?: TickView | null;
+  /** Controlled pan/zoom, so two panes can share one viewport in compare mode. */
+  transform?: ZoomTransform;
+  onTransformChange?: (transform: ZoomTransform) => void;
+  /** Suppresses the hover readout on the secondary pane. */
+  quiet?: boolean;
 }
 
 const ZOOM_RANGE: [number, number] = [1, 40];
@@ -91,13 +97,21 @@ function isHatched(
   return STATE_META[state]?.hatched ?? false;
 }
 
-export function ZoneMap({ zones, mode, selectedGeoid, onSelect, view }: ZoneMapProps) {
+export function ZoneMap({
+  zones, mode, selectedGeoid, onSelect, view,
+  transform: controlledTransform, onTransformChange, quiet = false,
+}: ZoneMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const pickCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [size, setSize] = useState({ width: 0, height: 0 });
-  const [transform, setTransform] = useState<ZoomTransform>(zoomIdentity);
+  const [ownTransform, setOwnTransform] = useState<ZoomTransform>(zoomIdentity);
+  // Controlled when a parent supplies one, so both panes of the comparison pan
+  // and zoom as a single viewport. Two maps that drift apart are worse than
+  // one, because the reader can no longer trust that they show the same place.
+  const transform = controlledTransform ?? ownTransform;
+  const setTransform = onTransformChange ?? setOwnTransform;
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 
@@ -383,7 +397,7 @@ export function ZoneMap({ zones, mode, selectedGeoid, onSelect, view }: ZoneMapP
         }}
       />
 
-      {hovered && (
+      {hovered && !quiet && (
         <p className="zone-hover" aria-hidden="true">
           <span className="hover-name">{hovered.name}</span>
           <span className="hover-state">
@@ -406,7 +420,11 @@ export function ZoneMap({ zones, mode, selectedGeoid, onSelect, view }: ZoneMapP
           : ""}
       </p>
 
-      <p className="zoom-hint label" aria-hidden="true">scroll to zoom &middot; drag to pan</p>
+      {!quiet && (
+        <p className="zoom-hint label" aria-hidden="true">
+          scroll to zoom &middot; drag to pan
+        </p>
+      )}
     </div>
   );
 }
