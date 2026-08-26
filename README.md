@@ -31,6 +31,36 @@ make build        # builds data/nullsignal.duckdb
 make demo         # engine on :8000, map on :5173
 ```
 
+`make snapshot` is optional — a snapshot is committed, so a fresh clone runs
+offline from `make setup && make build && make demo`.
+
+### Deploying it
+
+```bash
+uv run nullsignal export       # bakes every API response to web/public/api
+cd web && npm run build:static # emits web/dist, no backend required
+```
+
+`nullsignal export` walks the same code paths the live API does and writes the
+result as files, so the published site cannot drift from what the engine
+computes. Pushing to `main` runs both steps in CI and publishes to GitHub Pages
+(`.github/workflows/pages.yml`); `VITE_BASE` sets the subpath.
+
+### Generated explanations
+
+Without credentials the prose is written deterministically from the evidence
+packet — no network, no model, and a demo that cannot break. With a key set,
+the same packet is sent to Claude and the output is checked against the packet's
+numbers before it is shown:
+
+```bash
+export ANTHROPIC_API_KEY=...
+uv run nullsignal export       # prints how many were generated vs templated
+```
+
+The model never sees a risk score or a decision state either way; see
+[Explanation](#explanation).
+
 ## Data sources
 
 All keyless except where noted. Verified 2026-08-24.
