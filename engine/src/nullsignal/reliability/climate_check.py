@@ -28,8 +28,15 @@ COLD_SIGMA_LIMIT = 3.0
 # Generous, because heat index exceeds air temperature whenever it is humid.
 HOT_SIGMA_LIMIT = 5.0
 
-# Deviation at which the reading is disregarded entirely.
-SATURATION_SIGMA = 3.0
+# How far past the limit a reading must go before it is disregarded entirely.
+#
+# Narrow on purpose. Daily maximum temperature is tightly distributed -- a
+# three-sigma July day in New York is roughly a once-a-decade event, and four
+# sigma does not occur. Ramping over another three sigma put full discount at
+# six sigma, a reading no instrument fault could reach, so the detector fired
+# in principle and never in practice. The ramp has to span the distance from
+# rare to impossible, and for this quantity that distance is short.
+SATURATION_SIGMA = 1.5
 
 # Below this, the normal is built on too little history to lean on.
 MIN_SAMPLES = 20
