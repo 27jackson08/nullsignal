@@ -48,7 +48,11 @@ def test_dangerous_heat_with_no_complaints_contradicts_in_a_vocal_tract():
     graph = build(claims)
     assert graph.contradictions
     assert graph.mass > 0
-    assert "quieter than its own usual rate" in graph.describe()[0]
+    # Asserted on meaning rather than exact wording: the sentence has to name
+    # both sides of the conflict, so a reader can tell what disagrees with what.
+    described = graph.describe()[0]
+    assert "extreme heat" in described
+    assert "less than this tract normally does" in described
 
 
 def test_the_same_silence_is_unremarkable_in_a_tract_that_rarely_reports():

@@ -7,6 +7,7 @@ import { FeedHealthPanel } from "./components/feeds/FeedHealthPanel";
 import { ZoneMap, type ViewMode } from "./components/map/ZoneMap";
 import { CompareView } from "./components/compare/CompareView";
 import { Scoreboard } from "./components/scoreboard/Scoreboard";
+import { Welcome, hasBeenWelcomed } from "./components/welcome/Welcome";
 import { useSelectedZone } from "./hooks/useSelectedZone";
 import { useScenario } from "./hooks/useScenario";
 import { useZones } from "./hooks/useZones";
@@ -31,6 +32,10 @@ export default function App() {
   }, [scenario.name, mode]);
   const [selectedGeoid, setSelectedGeoid] = useSelectedZone();
 
+  // Shown once per browser. A judge opening a link has no idea that hatching
+  // is the point, and the map alone does not say so.
+  const [showWelcome, setShowWelcome] = useState(() => !hasBeenWelcomed());
+
   return (
     <div className={scenario.playback ? "app-shell has-timeline" : "app-shell"}>
       <AppHeader
@@ -43,6 +48,14 @@ export default function App() {
       />
       <div className={mode === "result" ? "app-body is-full" : "app-body"}>
         <main className="map-region">
+          {showWelcome && !isLoading && !error && (
+            <Welcome
+              unknownCount={summary?.reassured_by_baseline_only ?? null}
+              zoneCount={summary?.zone_count ?? null}
+              onDismiss={() => setShowWelcome(false)}
+              onLoadScenario={(name) => scenario.load(name)}
+            />
+          )}
           {error && (
             <div className="boot-message boot-error">
               <p className="label">Engine unreachable</p>

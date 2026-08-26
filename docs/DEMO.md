@@ -23,6 +23,11 @@ The two are the same build against the same snapshot. Use the local one if the
 venue's network is unreliable; use the deployed one if you would rather not
 have a terminal on screen.
 
+**A welcome card appears on the first visit in any browser** and is remembered
+after that. Open the page once and dismiss it before you record, or it will be
+your first frame. It exists for the judge who opens the link cold: its primary
+button loads the scenario below directly.
+
 Wait for the map to render (2,325 tracts, ~2s). Leave the browser on
 **NullSignal** view, live data. Have a second terminal ready.
 

@@ -16,15 +16,10 @@ import hashlib
 import json
 from dataclasses import dataclass, field
 
+from .. import config as _config
 from ..inference.evidence import ZoneEvidence
+from ..labels import SOURCE_LABELS
 from ..types import ZoneAssessment
-
-SOURCE_LABELS = {
-    "nws": "the weather service",
-    "cdc_svi": "the vulnerability index",
-    "gtfs_rt": "the transit realtime feed",
-    "311": "resident reports",
-}
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,20 +88,29 @@ def build(evidence: ZoneEvidence, assessment: ZoneAssessment) -> EvidencePacket:
     tempo = evidence.reporting_tempo
     if tempo is not None:
         facts["reporting_tempo"] = round(tempo, 2)
-        direction = "below" if tempo < 1 else "above"
+        # Named against the tract's own norm rather than a citywide one, and
+        # only called quiet or busy where the gap is large enough to mean
+        # something -- "1.02x and therefore above it" is a true sentence that
+        # tells the reader nothing.
+        if tempo <= _config.QUIET_TEMPO:
+            shape = "notably quieter than usual"
+        elif tempo >= _config.ELEVATED_TEMPO:
+            shape = "well above its usual volume"
+        else:
+            shape = "about normal for it"
         observations.append(
             f"residents filed {evidence.recent_report_count} reports in the last "
-            f"48 hours, {facts['reporting_tempo']:.2f} times this tract's own "
-            f"usual rate and therefore {direction} it"
+            f"48 hours, {shape} at {facts['reporting_tempo']:.2f} times this "
+            f"tract's own long-run rate"
         )
 
     if evidence.propensity and evidence.propensity.is_estimated:
         facts["reporting_index"] = round(evidence.propensity.index, 2)
         observations.append(
-            f"this tract reports at {facts['reporting_index']:.2f} times the rate "
-            f"of a comparable one, so its silence carries "
-            f"{evidence.propensity.evidential_weight:.2f} of the weight a typical "
-            f"tract's would"
+            f"it files {facts['reporting_index']:.2f} times as many reports as a "
+            f"demographically comparable tract, so its silence carries "
+            f"{evidence.propensity.evidential_weight:.2f} of the weight it would "
+            f"in a typical tract"
         )
         facts["silence_weight"] = round(evidence.propensity.evidential_weight, 2)
 

@@ -38,10 +38,12 @@ def _observations(packet: EvidencePacket) -> str:
 def _conflicts(packet: EvidencePacket) -> str:
     if not packet.conflicts:
         return ""
+    # `.lower()` on the whole sentence would flatten anything capitalised
+    # inside it; only the first letter needs to change after a colon.
     if len(packet.conflicts) == 1:
-        return f"Sources disagree: {packet.conflicts[0].lower()}."
+        return f"Sources disagree: {_lower_first(packet.conflicts[0])}"
     return (f"{len(packet.conflicts)} source conflicts remain unresolved, "
-            f"including {packet.conflicts[0].lower()}.")
+            f"including: {_lower_first(packet.conflicts[0])}")
 
 
 def _recommendation(packet: EvidencePacket) -> str:
@@ -57,6 +59,10 @@ def _join(items) -> str:
     if len(items) == 1:
         return items[0]
     return ", ".join(items[:-1]) + f", and {items[-1]}"
+
+
+def _lower_first(text: str) -> str:
+    return text[:1].lower() + text[1:] if text else text
 
 
 def _sentence_case(text: str) -> str:

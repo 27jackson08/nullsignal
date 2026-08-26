@@ -1,0 +1,145 @@
+.welcome-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: var(--space-5);
+  /* A short viewport must never bury the primary action below the fold. */
+  overflow-y: auto;
+  background: color-mix(in oklab, var(--ground) 78%, transparent);
+  backdrop-filter: blur(2px);
+  animation: welcome-in var(--duration-fast) var(--ease-out);
+}
+
+.welcome {
+  max-width: 34rem;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-strong);
+  /* The accent rule reads as the same signal the header uses, rather than as
+     decoration: this card is the entry point to the same argument. */
+  border-top: 2px solid var(--accent);
+  box-shadow: 0 24px 60px -20px rgb(0 0 0 / 65%);
+}
+
+.welcome-eyebrow {
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.welcome h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 1.1rem + 1.2vw, 1.9rem);
+  line-height: 1.15;
+  text-wrap: balance;
+  color: var(--ink);
+}
+
+.welcome p { color: var(--ink-dim); line-height: 1.6; }
+.welcome em { color: var(--ink); font-style: normal; }
+
+.welcome-key {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+}
+
+.welcome-key > div { display: flex; flex-direction: column; gap: var(--space-1); }
+
+.welcome-key dt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.welcome-key dd { font-size: .9rem; color: var(--ink-dim); line-height: 1.5; }
+
+.swatch { width: .85rem; height: .85rem; flex: none; }
+.swatch-low { background: var(--state-confirmed-low); }
+.swatch-unknown {
+  background: var(--state-unknown);
+  background-image: repeating-linear-gradient(
+    45deg, transparent 0 3px, rgb(255 255 255 / 28%) 3px 4px);
+}
+
+.welcome-stat { font-size: .92rem; }
+.welcome-stat strong {
+  color: var(--state-confirmed-high);
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+}
+
+.welcome-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+}
+
+/* Scoped through .welcome-actions so the variants below outrank this rule.
+   A bare `.welcome-primary` loses to `.welcome-actions button` on
+   specificity and the accent fill silently never applies. */
+.welcome-actions button {
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-mono);
+  font-size: .82rem;
+  letter-spacing: .04em;
+  border: 1px solid var(--rule-strong);
+  background: transparent;
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-out),
+              border-color var(--duration-fast) var(--ease-out),
+              background-color var(--duration-fast) var(--ease-out);
+}
+
+.welcome-actions .welcome-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--ground);
+  font-weight: 600;
+}
+
+.welcome-actions .welcome-primary:hover {
+  background: color-mix(in oklab, var(--accent) 86%, white);
+}
+
+.welcome-actions .welcome-secondary:hover {
+  color: var(--ink);
+  border-color: var(--ink-faint);
+}
+
+.welcome-actions button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@keyframes welcome-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-scrim { animation: none; }
+}
+
+@media (max-width: 40rem) {
+  .welcome-actions button { width: 100%; }
+}

@@ -83,7 +83,7 @@ def _direct_conflicts(by_subject: dict[Subject, list[Claim]]) -> list[Contradict
                 if left.value != right.value:
                     conflicts.append(Contradiction(
                         left, right,
-                        reason=f"two sources disagree about {subject}",
+                        reason="they cannot both be true",
                     ))
     return conflicts
 
@@ -109,8 +109,7 @@ def _expected_but_absent(by_subject: dict[Subject, list[Claim]]) -> list[Contrad
                 continue
             conflicts.append(Contradiction(
                 heat, distress,
-                reason=("dangerous heat, yet this tract has gone quieter than "
-                        "its own usual rate"),
+                reason="heat like this normally produces calls, not silence",
             ))
     return conflicts
 
@@ -149,7 +148,6 @@ def _unexplained_distress(by_subject: dict[Subject, list[Claim]]) -> list[Contra
                 continue
             conflicts.append(Contradiction(
                 heat, distress,
-                reason=("residents are reporting well above their own usual "
-                        "rate, and no instrument accounts for it"),
+                reason="no instrument accounts for it",
             ))
     return conflicts
