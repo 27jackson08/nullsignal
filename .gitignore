@@ -12,3 +12,4 @@ data/raw/311_requests.json
 data/raw/nyc_tracts.json
 data/raw/gtfs_subway.zip
 web/public/api/
+.coverage
