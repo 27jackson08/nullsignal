@@ -200,3 +200,43 @@ def test_a_frozen_feed_is_ignored_where_nobody_depends_on_it():
     evidence = make_evidence(zone=car_dependent, sources=frozen, heat_index_f=70.0)
     assert "gtfs_rt" not in evidence.missing_critical_sources
     assert engine.assess(evidence).state is DecisionState.CONFIRMED_LOW
+
+
+# --- one rule for every way a critical source can fail -------------------------
+
+@pytest.mark.parametrize(
+    ("component", "value", "why"),
+    [
+        ("freshness", 0.05, "four hours behind says nothing about now"),
+        ("coverage", 0.10, "speaks for a tenth of the tract, not the tract"),
+        ("liveness", 0.10, "an instrument talking to itself"),
+    ],
+)
+def test_a_critical_source_degraded_any_way_counts_as_absent(component, value, why):
+    """Absent, stale, partial and implausible fail differently and mean the
+    same thing: this source cannot support a safe call.
+
+    Regression: only outright absence counted. A lagging feed, a feed covering
+    a fifth of a tract, and a reading several sigma from anything the city has
+    ever done on that date each carried a CONFIRMED_LOW they could not support
+    -- 91%, 83% and 92% false reassurance in scenarios built to test exactly
+    that.
+    """
+    sources = {n: Reliability() for n in ("311", "nws", "gtfs_rt", "cdc_svi")}
+    sources["nws"] = Reliability(**{component: value})
+
+    evidence = make_evidence(sources=sources, heat_index_f=70.0)
+    assert "nws" in evidence.missing_critical_sources, why
+    assert engine.assess(evidence).state is DecisionState.UNKNOWN
+
+
+def test_a_merely_weakened_source_is_not_treated_as_absent():
+    """The floors must not swallow ordinary degradation. A source at 60% is
+    worth less, not worth nothing, and marking it absent would put the whole
+    city in UNKNOWN on any imperfect day."""
+    sources = {n: Reliability() for n in ("311", "nws", "gtfs_rt", "cdc_svi")}
+    sources["nws"] = Reliability(freshness=0.6, coverage=0.6, liveness=0.6)
+
+    evidence = make_evidence(sources=sources, heat_index_f=70.0)
+    assert "nws" not in evidence.missing_critical_sources
+    assert engine.assess(evidence).state is DecisionState.CONFIRMED_LOW

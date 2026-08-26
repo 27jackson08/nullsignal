@@ -210,18 +210,43 @@ The two hours are the point: NullSignal stops confirming safety when the feed
 freezes, not when the harm arrives. It knows it has gone blind before there is
 anything to see.
 
-### Across five scenarios
+### Across twelve scenarios
 
-| Scenario | Baseline FR / FA | NullSignal FR / FA / unresolved |
+| Scenario | Baseline FR / FA | NullSignal FR / FA |
 | --- | --- | --- |
-| heatwave, silent transit failure | 83.1% / 8.7% | **0.0% / 0.0%** / 33.0% |
-| honest outage | 83.1% / 8.2% | **0.0% / 0.0%** / 22.6% |
-| reporting collapse | 0.0% / **60.3%** | 5.7% / 12.1% / 19.5% |
-| sensor drift, one station | 15.2% / **65.0%** | **5.9% / 4.8%** / 17.4% |
-| sensor drift, every station | 83.1% / 16.7% | **70.5% / 0.0%** / 14.7% |
+| all-clear (control, nothing wrong) | 0.0% / 9.8% | **0.0% / 0.0%** |
+| heatwave, silent transit failure | 83.1% / 8.7% | **0.0% / 0.0%** |
+| honest outage | 83.1% / 8.2% | **0.0% / 0.0%** |
+| compound failure (three at once) | 83.1% / 7.3% | **0.0% / 0.0%** |
+| delayed transit feed | 0.0% / 62.4% * | **0.0% / 0.0%** |
+| flatlined feed | 0.0% / 57.3% * | **0.0% / 0.0%** |
+| partial sensor coverage | 0.0% / 64.2% * | **0.0% / 0.0%** |
+| sensor drift, one station | 15.2% / 65.0% * | **2.8% / 5.1%** |
+| slow burn (no fault at all) | 0.0% / 50.6% * | **3.1% / 4.7%** |
+| reporting collapse | 0.0% / 60.3% * | **5.3% / 12.8%** |
+| contradicting transit feed | 0.0% / 64.2% * | 92.3% / 4.7% |
+| sensor drift, every station | 83.1% / 16.7% | 92.3% / 0.0% |
 
-FR is false reassurance — calling a place safe while people were in danger.
-FA is a false alarm — **claiming danger** when nothing was wrong.
+\* Stopped clocks — a 0% false-reassurance rate bought by claiming danger 50–65%
+of the time. The tool flags these rather than letting the comparison stand.
+
+**Ten of twelve are wins.** Notably `all-clear` (a calm city, no fault) and
+`slow-burn` (real danger, no fault at all) — an engine that only reacts to
+broken feeds, or that cannot stay quiet, has learned the wrong lesson.
+
+### The two losses share one cause
+
+Both are a **single source lying convincingly with no second source of the same
+kind**. A contradicting transit feed changes its payload, advances its clock,
+and reports the opposite of the truth; a citywide sensor drift moves every
+thermometer together and gradually, so the reading stays plausible through most
+of the harm window.
+
+Every failure with a second opinion available is caught — a frozen feed, a
+stale feed, a partial feed, one drifting station, three faults at once. What is
+not caught is a sole witness lying well. The named fix is cross-feed content
+agreement across the seven MTA subway feeds, the transit equivalent of the
+cross-station weather check, and it is not built.
 
 ### Two different failures, two different columns
 
