@@ -1,4 +1,5 @@
 import type { Summary } from "../../lib/api";
+import type { Surface } from "../../hooks/useSurface";
 import type { ViewMode } from "../map/ZoneMap";
 import "./app-header.css";
 
@@ -9,7 +10,14 @@ interface AppHeaderProps {
   scenarios: { name: string; description: string }[];
   activeScenario: string | null;
   onLoadScenario: (name: string) => void;
+  surface: Surface;
+  onSurfaceChange: (surface: Surface) => void;
 }
+
+const SURFACES: { id: Surface; label: string }[] = [
+  { id: "console", label: "Console" },
+  { id: "cooling", label: "Heat relief audit" },
+];
 
 const MODES: { id: ViewMode; label: string; hint: string; scenarioOnly?: boolean }[] = [
   { id: "compare", label: "Side by side", hint: "Both engines on the same evidence, same moment" },
@@ -25,6 +33,7 @@ const MODES: { id: ViewMode; label: string; hint: string; scenarioOnly?: boolean
 
 export function AppHeader({
   summary, mode, onModeChange, scenarios, activeScenario, onLoadScenario,
+  surface, onSurfaceChange,
 }: AppHeaderProps) {
   const overclaimed = summary?.reassured_by_baseline_only ?? 0;
   const modes = MODES.filter((m) => !m.scenarioOnly || activeScenario);
@@ -36,13 +45,29 @@ export function AppHeader({
         <p className="tagline">Don&rsquo;t confuse silence with safety</p>
       </div>
 
+      <nav className="surface-switch" aria-label="Surface">
+        {SURFACES.map(({ id, label }) => (
+          <button
+            key={id}
+            type="button"
+            aria-pressed={surface === id}
+            className={surface === id ? "is-active" : undefined}
+            onClick={() => onSurfaceChange(id)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      {surface === "console" && (
       <div className="headline-stat" title="Tracts a conventional dashboard calls safe that we will not">
         <span className="label">Called safe on evidence we don&rsquo;t have</span>
         <strong className="numeric">{overclaimed}</strong>
         <span className="denom numeric">of {summary?.zone_count ?? 0} tracts</span>
       </div>
+      )}
 
-      {scenarios.length > 0 && (
+      {surface === "console" && scenarios.length > 0 && (
         <label className="scenario-picker">
           <span className="label">Scenario</span>
           <select
@@ -57,6 +82,7 @@ export function AppHeader({
         </label>
       )}
 
+      {surface === "console" && (
       <nav className="mode-switch" aria-label="Map view">
         {modes.map(({ id, label, hint }) => (
           <button
@@ -71,6 +97,7 @@ export function AppHeader({
           </button>
         ))}
       </nav>
+      )}
     </header>
   );
 }

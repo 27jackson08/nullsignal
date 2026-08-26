@@ -339,6 +339,13 @@ def _manifest_summary() -> dict:
     }
 
 
+@app.get("/api/findings/cooling")
+def get_cooling_finding() -> dict:
+    """The heat-relief audit. Real data, no simulation involved."""
+    from ..findings.cooling import audit
+    return audit(DB_PATH).as_dict()
+
+
 @app.get("/api/summary")
 def get_summary() -> dict:
     return state.summary

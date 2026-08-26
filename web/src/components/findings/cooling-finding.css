@@ -1,0 +1,33 @@
+.record { min-height: 100%; overflow-y: auto; }
+
+.record-message {
+  display: grid;
+  place-items: center;
+  padding: var(--gutter);
+  font-family: var(--serif);
+  color: var(--ink-muted);
+}
+
+.record code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92em;
+  background: var(--paper-sunk);
+  padding: 0.05em 0.3em;
+}
+
+/* The two count blocks carry different claims and must not read as a pair of
+   identical stat cards, so the second is set at the weight of running text. */
+.record-section + .record-section .record-count .n { font-size: clamp(2.4rem, 1.4rem + 4vw, 4.5rem); }
+
+@media (max-width: 46rem) {
+  .coverage-row { grid-template-columns: 3.4rem 1fr 2.4rem; }
+}
+
+.record-table .tract-no {
+  display: block;
+  font-weight: 400;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  margin-top: 0.1rem;
+}

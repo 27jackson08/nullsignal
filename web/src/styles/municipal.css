@@ -1,0 +1,251 @@
+/* The municipal record.
+   ---------------------------------------------------------------------------
+   NullSignal's findings are claims about a real city, sourced from that city's
+   own published data, and they are meant to be printed, carried and cited. So
+   they are set as a municipal record rather than as a dashboard: ink on paper,
+   rules instead of boxes, and figures that line up in columns.
+
+   Public Sans is the typeface of the US Web Design System -- drawn for
+   government documents, which is precisely what this is. Source Serif carries
+   running prose. There is deliberately no monospace: a grid of tabular figures
+   does the work that a terminal font would otherwise be faking. */
+.record {
+  --paper:       #F8F8F5;
+  --paper-sunk:  #EFEFEA;
+  --ink:         #14161A;
+  --ink-muted:   #4C525A;
+  --ink-faint:   #767D86;
+
+  /* Hairlines separate rows; the heavy rule separates arguments. */
+  --rule-hair:   #D4D5CF;
+  --rule-heavy:  #14161A;
+
+  /* One alarm colour, used only where the record makes an accusation. */
+  --alarm:       #A82D17;
+  /* Municipal navy, for structure and provenance only. Never for emphasis. */
+  --civic:       #1B3F6B;
+
+  --measured:    #2C6E49;
+
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans: "Public Sans", -apple-system, "Helvetica Neue", Arial, sans-serif;
+
+  --gutter: clamp(1.25rem, 0.6rem + 2.6vw, 3.5rem);
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Figures in running text and in tables are compared, not read as words. */
+.record .fig {
+  font-variant-numeric: tabular-nums lining;
+  font-feature-settings: "tnum" 1;
+}
+
+/* --- masthead ------------------------------------------------------------ */
+
+/* A record has a measure. Full-bleed rows would let the coverage bars stretch
+   to whatever the window happens to be, which reads as a dashboard rather than
+   as a document. */
+.record-masthead,
+.record-body {
+  max-width: 76rem;
+  margin-inline: auto;
+}
+
+.record-masthead {
+  border-bottom: 3px solid var(--rule-heavy);
+  padding: var(--gutter) var(--gutter) 0.75rem;
+}
+
+.record-issuer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.record-issuer .civic { color: var(--civic); }
+
+.record-title {
+  margin-top: 0.75rem;
+  font-family: var(--sans);
+  font-size: clamp(2rem, 1.1rem + 4vw, 4.25rem);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+  max-width: 20ch;
+}
+
+.record-standfirst {
+  margin-top: 1rem;
+  margin-bottom: 1.25rem;
+  font-family: var(--serif);
+  font-size: clamp(1.02rem, 0.95rem + 0.5vw, 1.3rem);
+  line-height: 1.5;
+  color: var(--ink-muted);
+  max-width: 62ch;
+}
+
+/* --- body ---------------------------------------------------------------- */
+
+.record-body { padding: 0 var(--gutter) var(--gutter); }
+
+.record-section { padding-top: clamp(2rem, 1.4rem + 2vw, 3.5rem); }
+
+.record-section > h3 {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--rule-heavy);
+}
+
+.record-lede {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--ink-muted);
+  max-width: 64ch;
+  margin-top: 1rem;
+}
+
+.record-lede strong { color: var(--ink); font-weight: 600; }
+
+/* --- the count ----------------------------------------------------------- */
+
+.record-count {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.6rem;
+  margin: 1.25rem 0 0.35rem;
+}
+
+.record-count .n {
+  font-size: clamp(3.5rem, 2rem + 7vw, 7rem);
+  font-weight: 800;
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  color: var(--alarm);
+}
+
+.record-count .of {
+  font-size: clamp(1rem, 0.9rem + 0.5vw, 1.4rem);
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+/* --- tables -------------------------------------------------------------- */
+
+.record-table-wrap { overflow-x: auto; margin-top: 1.25rem; }
+
+.record-table {
+  width: 100%;
+  min-width: 34rem;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.record-table th {
+  text-align: left;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 0 0.75rem 0.4rem 0;
+  border-bottom: 1px solid var(--rule-heavy);
+  white-space: nowrap;
+}
+
+.record-table td {
+  padding: 0.6rem 0.75rem 0.6rem 0;
+  border-bottom: 1px solid var(--rule-hair);
+  vertical-align: baseline;
+}
+
+/* Fixed proportions so the bars stay a readable width at any window size. */
+.record-table col.c-place   { width: 34%; }
+.record-table col.c-boro    { width: 13%; }
+.record-table col.c-num     { width: 13%; }
+.record-table col.c-cover   { width: 40%; }
+
+.record-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.record-table .place { font-weight: 600; }
+.record-table .quiet { color: var(--ink-faint); font-size: 0.82rem; }
+.record-table tbody tr:hover { background: var(--paper-sunk); }
+
+/* --- paired coverage bars ------------------------------------------------ */
+/* The whole argument in one shape: what is claimed, and what is there. */
+
+.coverage { display: grid; gap: 0.2rem; min-width: 9rem; }
+
+.coverage-row {
+  display: grid;
+  grid-template-columns: 3.9rem 1fr 2.6rem;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.coverage-track { height: 0.55rem; background: var(--paper-sunk); }
+.coverage-fill { height: 100%; display: block; }
+.coverage-listed .coverage-fill { background: var(--ink-faint); }
+.coverage-working .coverage-fill { background: var(--measured); }
+.coverage-working.is-zero .coverage-fill { background: var(--alarm); }
+
+.coverage-row .val {
+  text-align: right;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A tract with nothing working is the claim itself, so it is stated. */
+.coverage-none {
+  color: var(--alarm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+/* --- provenance ---------------------------------------------------------- */
+
+.record-source {
+  margin-top: clamp(2rem, 1.4rem + 2vw, 3.5rem);
+  padding-top: 1rem;
+  border-top: 3px solid var(--rule-heavy);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--ink-muted);
+  max-width: 72ch;
+}
+
+.record-source dt {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-top: 0.75rem;
+}
+
+.record-source a { color: var(--civic); }
+
+@media print {
+  .record { background: #fff; }
+  .record-table tbody tr:hover { background: none; }
+}

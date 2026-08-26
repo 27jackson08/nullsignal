@@ -187,3 +187,31 @@ export interface QueueEntry {
 export const fetchQueue = (limit = 8) =>
   apiGet<{ zones: QueueEntry[] }>(`/api/queue?limit=${limit}`)
     .then((r) => r.zones.slice(0, limit));
+
+
+export interface CoolingFinding {
+  sites: {
+    total: number;
+    working: number;
+    not_working: number;
+    by_status: { kind: string; status: string; count: number }[];
+    by_borough: { borough: string; not_working: number }[];
+  };
+  impact: {
+    tracts_overstated: number;
+    residents_overstated: number;
+    residents_without_relief: number;
+  };
+  equity: {
+    overstated_top_quintile_share: number;
+    citywide_top_quintile_share: number;
+    concentration: number;
+  };
+  worst: {
+    geoid: string; name: string; borough: string; population: number;
+    listed: number; working: number; gap: number; svi_overall: number | null;
+  }[];
+}
+
+export const fetchCoolingFinding = () =>
+  apiGet<CoolingFinding>("/api/findings/cooling");

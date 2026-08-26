@@ -8,6 +8,8 @@ import { ZoneMap, type ViewMode } from "./components/map/ZoneMap";
 import { CompareView } from "./components/compare/CompareView";
 import { Scoreboard } from "./components/scoreboard/Scoreboard";
 import { Welcome, hasBeenWelcomed } from "./components/welcome/Welcome";
+import { CoolingFinding } from "./components/findings/CoolingFinding";
+import { useSurface } from "./hooks/useSurface";
 import { useSelectedZone } from "./hooks/useSelectedZone";
 import { useScenario } from "./hooks/useScenario";
 import { useZones } from "./hooks/useZones";
@@ -20,6 +22,7 @@ export default function App() {
   const [mode, setMode] = useState<ViewMode>("nullsignal");
   const [scenarios, setScenarios] = useState<ScenarioSummary[]>([]);
   const scenario = useScenario();
+  const [surface, setSurface] = useSurface();
 
   useEffect(() => {
     fetchScenarios().then(setScenarios).catch(() => setScenarios([]));
@@ -37,7 +40,8 @@ export default function App() {
   const [showWelcome, setShowWelcome] = useState(() => !hasBeenWelcomed());
 
   return (
-    <div className={scenario.playback ? "app-shell has-timeline" : "app-shell"}>
+    <div className={scenario.playback && surface === "console"
+      ? "app-shell has-timeline" : "app-shell"}>
       <AppHeader
         summary={summary}
         mode={mode}
@@ -45,7 +49,14 @@ export default function App() {
         scenarios={scenarios}
         activeScenario={scenario.name}
         onLoadScenario={(name) => (name ? scenario.load(name) : scenario.exit())}
+        surface={surface}
+        onSurfaceChange={setSurface}
       />
+      {surface === "cooling" ? (
+        <div className="app-body is-full">
+          <CoolingFinding />
+        </div>
+      ) : (
       <div className={mode === "result" ? "app-body is-full" : "app-body"}>
         <main className="map-region">
           {showWelcome && !isLoading && !error && (
@@ -93,7 +104,8 @@ export default function App() {
           <EvidencePanel geoid={selectedGeoid} onSelect={setSelectedGeoid} />
         )}
       </div>
-      {scenario.playback && (
+      )}
+      {surface === "console" && scenario.playback && (
         <Timeline
           playback={scenario.playback}
           view={scenario.view}
