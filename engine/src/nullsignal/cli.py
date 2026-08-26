@@ -24,7 +24,7 @@ def main(argv: list[str] | None = None) -> int:
     snap.add_argument("--skip", nargs="*", default=[],
                       choices=["tracts", "svi", "311", "weather", "transit",
                                "gtfs_static", "cooling", "air_quality",
-                               "climatology"])
+                               "climatology", "alerts", "ems"])
 
     poll = sub.add_parser("poll", help="record repeated observations of volatile feeds")
     poll.add_argument("--rounds", type=int, default=1)

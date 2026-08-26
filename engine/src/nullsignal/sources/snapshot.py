@@ -12,7 +12,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from . import (
-    air_quality, climatology, cooling, gtfs_static, socrata, svi, transit, weather,
+    air_quality, alerts, climatology, cooling, ems, gtfs_static, socrata, svi,
+    transit, weather,
 )
 from .base import FetchResult, SourceFetchError
 
@@ -58,6 +59,8 @@ def run_snapshot(
         "cooling": lambda: [cooling.fetch_cooling_sites(dest_dir)],
         "air_quality": lambda: [air_quality.fetch_air_quality(dest_dir)],
         "climatology": lambda: [climatology.fetch_normals(dest_dir)],
+        "alerts": lambda: [alerts.fetch_alerts(dest_dir)],
+        "ems": lambda: [ems.fetch_ems(dest_dir)],
     }
 
     results: list[FetchResult] = []
