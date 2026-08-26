@@ -1,5 +1,5 @@
 {
-  "snapshot_at": "2026-08-25T23:19:11.915391+00:00",
+  "snapshot_at": "2026-08-26T03:53:45.076597+00:00",
   "sources": [
     {
       "source_id": "311",
@@ -38,6 +38,15 @@
       "note": "1026 sites, 926 working, 757 in state-plane coordinates"
     },
     {
+      "source_id": "ems_dispatches",
+      "fetched_at": "2026-08-26T03:53:45.063435+00:00",
+      "status_code": 200,
+      "content_hash": "60913c50adbb87b2",
+      "byte_count": 4723,
+      "path": "ems_dispatches.json",
+      "note": "71 districts, 286 heat dispatches of 100000 health dispatches over 120d"
+    },
+    {
       "source_id": "gtfs_static",
       "fetched_at": "2026-08-24T12:39:56.883144+00:00",
       "status_code": 200,
@@ -54,6 +63,15 @@
       "byte_count": 43792,
       "path": "gtfs_stations.json",
       "note": "496 parent stations"
+    },
+    {
+      "source_id": "nws_alerts",
+      "fetched_at": "2026-08-26T03:53:40.839643+00:00",
+      "status_code": 200,
+      "content_hash": "4f53cda18c2baa0c",
+      "byte_count": 2,
+      "path": "nws_alerts.json",
+      "note": "0 active alerts in NY, 0 heat-related"
     }
   ],
   "failures": []
