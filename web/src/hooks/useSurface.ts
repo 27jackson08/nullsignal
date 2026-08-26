@@ -2,18 +2,25 @@ import { useCallback, useEffect, useState } from "react";
 
 const PARAM = "surface";
 
-/** Which top-level surface is open: the live console, or a finding.
+/** Which top-level surface is open.
  *
- *  In the URL because a finding is the thing worth sending to someone. A
+ *  In the URL because a finding is the thing worth sending to someone: a
  *  colleague opening the link should land on the claim, not on a map they then
- *  have to navigate. */
+ *  have to navigate.
+ *
+ *  The briefing is the default. A map of New York is the most commoditised
+ *  artefact in civic software and says nothing on its own about what this
+ *  produces; the work order says it in a headline. The map is one click away
+ *  and is where the argument gets checked, not where it gets made. */
 export type Surface = "briefing" | "console" | "cooling";
 
 const SURFACES: readonly Surface[] = ["briefing", "console", "cooling"];
 
+const DEFAULT_SURFACE: Surface = "briefing";
+
 function read(): Surface {
   const value = new URLSearchParams(window.location.search).get(PARAM);
-  return SURFACES.includes(value as Surface) ? (value as Surface) : "console";
+  return SURFACES.includes(value as Surface) ? (value as Surface) : DEFAULT_SURFACE;
 }
 
 export function useSurface(): [Surface, (next: Surface) => void] {
@@ -28,7 +35,7 @@ export function useSurface(): [Surface, (next: Surface) => void] {
   const go = useCallback((next: Surface) => {
     setSurface(next);
     const params = new URLSearchParams(window.location.search);
-    if (next === "console") params.delete(PARAM);
+    if (next === DEFAULT_SURFACE) params.delete(PARAM);
     else params.set(PARAM, next);
 
     const query = params.toString();

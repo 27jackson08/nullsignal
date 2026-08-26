@@ -62,7 +62,9 @@ export default function App() {
       ) : (
       <div className={mode === "result" ? "app-body is-full" : "app-body"}>
         <main className="map-region">
-          {showWelcome && !isLoading && !error && (
+          {/* Only over the map. The briefing states what it is in its own
+              headline; a modal explaining it would be noise. */}
+          {showWelcome && surface === "console" && !isLoading && !error && (
             <Welcome
               unknownCount={summary?.reassured_by_baseline_only ?? null}
               zoneCount={summary?.zone_count ?? null}

@@ -5,12 +5,38 @@
 Most monitoring systems encode *no data* as *no problem*. NullSignal makes
 "we don't know" a first-class state that "low risk" cannot collapse into.
 
-**[Open the live map →](https://27jackson08.github.io/nullsignal/)**
+**[Open it →](https://27jackson08.github.io/nullsignal/)** — no install, no
+backend. The published site is the same build a local clone produces: every
+response is baked from the snapshot committed in `data/raw`, so what you click
+is exactly what `make demo` serves.
 
-No install, no backend. The published site is the same build a local clone
-produces: every response is baked from the snapshot committed in `data/raw`, so
-what you click is exactly what `make demo` serves. Start on **Live data**, then
-load the `heatwave-transit-silent-failure` scenario and open **Result**.
+Three surfaces, in the order they matter:
+
+| | |
+| --- | --- |
+| **Tonight's briefing** | Where to send people, why, and what to do there. The part someone uses. |
+| **Heat relief audit** | 100 of New York's 1,026 listed cooling sites report themselves as not working. |
+| **Console** | The map, the scenarios, and the scoreboard — where the method gets checked. |
+
+## What it found
+
+Two claims about New York, from the city's own published data, with no
+simulation involved:
+
+**The city lists heat relief that does not work.** 100 of 1,026 sites are not
+operational by NYC's own `status` field — 57 broken, 29 under construction, 10
+not yet activated, 5 unknown. Buffering listed sites and working sites
+separately puts **570,867 residents** across 162 tracts inside relief that
+exists on paper and not in fact. Seven of the twelve worst tracts have nothing
+working at all: Sunset Park (Central) reads 100% covered and has none.
+
+**The blind spots are not evenly distributed.** 371,137 residents live in tracts
+that cannot be called either way. **59.2%** of them are in the most vulnerable
+fifth of the city, against 24.5% citywide — **2.42×**.
+
+The two meet in the briefing: 93 of the 98 uncertifiable tracts resolve on the
+same action — confirm the cooling centre is open and reachable — and the audit
+is why that check is not a formality.
 
 ## The 2x2
 
