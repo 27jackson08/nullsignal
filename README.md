@@ -545,6 +545,27 @@ Another honest negative: across NYC, ozone is essentially **flat by
 vulnerability quintile** (32.9 to 33.5 ppb), as is PM2.5. It is a compound
 hazard, not an equity signal, and it is used as one.
 
+## Verified from a clean clone
+
+The offline claim is tested, not asserted. A fresh clone with no network:
+
+```
+git clone … && uv venv && uv pip install -e ".[dev]"
+uv run nullsignal build     # 4.5s, 155 files, 28MB, committed data only
+uv run pytest               # 162 passed
+uv run nullsignal eval      # identical to the working directory
+```
+
+This caught a real bug that a working directory hides. The weather join
+filtered on wall-clock `now()`, so a committed snapshot silently stopped
+matching a day after it was taken — weather became a missing critical source
+and **every tract in the city fell to UNKNOWN**. The engine's behaviour was
+correct throughout; it declined to certify safety without weather. But the gap
+was self-inflicted, and it was invisible locally because a working directory
+keeps getting refreshed. The window is now anchored to the snapshot's own
+forecast, as the 311 window already was, with a regression test that fails if
+any source silently stops joining.
+
 ## Demoing it
 
 `docs/DEMO.md` — a ninety-second runbook, rehearsed against the production
