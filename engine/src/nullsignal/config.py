@@ -64,6 +64,25 @@ CONDITIONALLY_CRITICAL_SOURCES = frozenset({"gtfs_rt"})
 # Backwards-compatible alias for the unconditional set.
 CRITICAL_SOURCES = ALWAYS_CRITICAL_SOURCES
 
+# Freshness below which a decision-critical source counts as absent rather than
+# merely stale. Evidence too old to act on is evidence you do not have: a
+# four-hour-old picture of whether trains are running says nothing useful about
+# whether people can leave right now, and treating it as merely "weak" lets a
+# lagging feed carry a safe call it cannot support.
+CRITICAL_FRESHNESS_FLOOR = 0.25
+
+# Coverage below which a decision-critical source is not speaking for the zone.
+# A feed that can see a fifth of a tract is perfectly healthy and perfectly
+# uninformative about the other four fifths, and letting it certify the whole
+# tract is the same error as trusting a stale one -- the reading is true, it
+# just is not about the place the verdict is about.
+CRITICAL_COVERAGE_FLOOR = 0.35
+
+# Liveness below which a decision-critical source is an instrument talking to
+# itself rather than about the world -- a frozen payload, or a reading several
+# sigma from anything this city has done on this date.
+CRITICAL_LIVENESS_FLOOR = 0.5
+
 # The cap applied when a critical source is absent. Deliberately below
 # SUFFICIENCY_THRESHOLD: a zone missing decision-critical evidence must land in
 # UNKNOWN, never in CONFIRMED_LOW.

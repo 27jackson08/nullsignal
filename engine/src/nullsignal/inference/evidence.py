@@ -98,13 +98,37 @@ class ZoneEvidence:
 
     @property
     def missing_critical_sources(self) -> tuple[str, ...]:
-        """Sources without which no safe call is defensible for this zone."""
-        return tuple(
-            sorted(
-                name for name in self.critical_sources
-                if self.source_reliability.get(name, Reliability.absent()).score <= 0.0
-            )
-        )
+        """Sources without which no safe call is defensible for this zone.
+
+        Absent, too stale to act on, or covering too little of the zone to
+        speak for it.
+
+        One rule, applied to all three components of reliability, because they
+        fail in the same way for different reasons.
+
+        A feed running four hours behind is not weak evidence about whether
+        trains are running *now*; it is evidence about a city that has already
+        moved on. A feed that can see a fifth of a tract is not weak evidence
+        about the tract; it is good evidence about somewhere else. A reading
+        several sigma from anything the city has done on this date is not weak
+        evidence about the weather; it is an instrument talking to itself.
+
+        Counting any of them as merely degraded let them carry safe calls they
+        could not support -- 91%, 83% and 92% false reassurance respectively,
+        in scenarios built to test exactly that.
+        """
+        missing = []
+        for name in self.critical_sources:
+            reliability = self.source_reliability.get(name, Reliability.absent())
+            if reliability.score <= 0.0:
+                missing.append(name)
+            elif reliability.freshness < config.CRITICAL_FRESHNESS_FLOOR:
+                missing.append(name)
+            elif reliability.coverage < config.CRITICAL_COVERAGE_FLOOR:
+                missing.append(name)
+            elif reliability.liveness < config.CRITICAL_LIVENESS_FLOOR:
+                missing.append(name)
+        return tuple(sorted(missing))
 
     @property
     def critical_freshness(self) -> float:
