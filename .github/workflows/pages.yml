@@ -37,13 +37,15 @@ jobs:
           cache-dependency-path: web/package-lock.json
 
       - name: Install the engine
-        run: uv pip install --system -e .
+        run: |
+          uv venv
+          uv pip install -e .
 
       - name: Build the store from the committed snapshot
-        run: nullsignal build
+        run: uv run nullsignal build
 
       - name: Bake the API to static JSON
-        run: nullsignal export
+        run: uv run nullsignal export
 
       - name: Build the site
         working-directory: web
