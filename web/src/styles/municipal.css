@@ -245,3 +245,53 @@
   .record { background: #fff; }
   .record-table tbody tr:hover { background: none; }
 }
+
+/* --- provenance ---------------------------------------------------------- */
+
+.source-list { list-style: none; margin: .5rem 0 0; padding: 0; }
+
+.source-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .3rem .75rem;
+  padding: .35rem 0;
+  border-bottom: 1px solid var(--rule-hair);
+  font-size: .85rem;
+}
+
+.source-list a { color: var(--civic); font-weight: 600; }
+.source-list a:hover { color: var(--alarm); }
+.source-list .note { color: var(--ink-faint); font-size: .8rem; }
+
+/* --- sensitivity --------------------------------------------------------- */
+/* The claim under progressively stricter readings. The last row is the one
+   that has to survive, so it is the one set in ink. */
+
+.sensitivity { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: .88rem; }
+
+.sensitivity th {
+  text-align: left;
+  font-size: .64rem;
+  font-weight: 700;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 0 .75rem .4rem 0;
+  border-bottom: 1px solid var(--rule-heavy);
+  white-space: nowrap;
+}
+
+.sensitivity td {
+  padding: .55rem .75rem .55rem 0;
+  border-bottom: 1px solid var(--rule-hair);
+  color: var(--ink-muted);
+}
+
+.sensitivity .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.sensitivity tr:last-child td {
+  color: var(--ink);
+  font-weight: 700;
+  border-bottom: 2px solid var(--rule-heavy);
+}

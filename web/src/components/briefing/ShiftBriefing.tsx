@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 
 import { fetchBriefing, fetchCoolingFinding } from "../../lib/api";
-import type { Briefing, CoolingFinding } from "../../lib/api";
+import type { Assignment, Briefing, CoolingFinding } from "../../lib/api";
+import { useCompletedChecks, type Outcome } from "../../hooks/useCompletedChecks";
 import "../../styles/municipal.css";
 import "./shift-briefing.css";
 
@@ -33,6 +34,7 @@ export function ShiftBriefing({ onOpenAudit }: { onOpenAudit: () => void }) {
   const [data, setData] = useState<Briefing | null>(null);
   const [audit, setAudit] = useState<CoolingFinding | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { completed, record, undo, clear } = useCompletedChecks();
 
   useEffect(() => {
     fetchBriefing().then(setData).catch((e: Error) => setError(e.message));
@@ -51,6 +53,16 @@ export function ShiftBriefing({ onOpenAudit }: { onOpenAudit: () => void }) {
   const { situation, assignments, check_tally } = data;
   const headCheck = check_tally[0];
 
+  // A tract counts as cleared once a check has come back clear: the engine
+  // already computed what it becomes, so this only reads that answer.
+  const cleared = assignments.filter(
+    (a) => completed[a.geoid] === "clear"
+      && a.check?.resolves_to.state !== "UNKNOWN",
+  );
+  const outstanding = assignments.filter((a) => !cleared.includes(a));
+  const residentsCleared = cleared.reduce((sum, a) => sum + a.population, 0);
+  const hours = Math.round(data.minutes_to_clear_the_city / 60);
+
   return (
     <article className="record briefing">
       <header className="record-masthead">
@@ -65,9 +77,16 @@ export function ShiftBriefing({ onOpenAudit }: { onOpenAudit: () => void }) {
           risk. A tract we understand needs no visit however bad it is; a tract
           we cannot see does, and the people standing in it are the reason.
         </p>
-        <button type="button" className="print-order" onClick={() => window.print()}>
-          Print this order
-        </button>
+        <div className="order-actions">
+          <button type="button" className="print-order" onClick={() => window.print()}>
+            Print this order
+          </button>
+          {Object.keys(completed).length > 0 && (
+            <button type="button" className="reset-order" onClick={clear}>
+              Reset the shift
+            </button>
+          )}
+        </div>
       </header>
 
       <div className="record-body">
@@ -123,44 +142,35 @@ export function ShiftBriefing({ onOpenAudit }: { onOpenAudit: () => void }) {
         )}
 
         <section className="record-section">
-          <h3>Assignments &middot; {assignments.length} for this shift</h3>
+          <h3>
+            Assignments &middot; {outstanding.length} outstanding
+            {cleared.length > 0 && ` \u00b7 ${cleared.length} cleared`}
+          </h3>
+          {cleared.length > 0 && (
+            <p className="cleared-note">
+              <strong>{residentsCleared.toLocaleString()}</strong> residents are
+              no longer standing in a blind spot. The engine can call these
+              tracts now &mdash; not because anything changed on the ground, but
+              because somebody went and looked.
+            </p>
+          )}
           <ol className="assignments">
             {assignments.map((a) => (
-              <li key={a.geoid} className="assignment">
-                <span className="tick" aria-hidden="true" />
-                <span className="rank fig">{String(a.rank).padStart(2, "0")}</span>
-                <div className="where">
-                  <p className="place">{a.name}</p>
-                  <p className="meta">
-                    {a.borough} &middot; Tract {a.geoid.slice(-6)} &middot;{" "}
-                    <span className="fig">{a.population.toLocaleString()}</span>{" "}
-                    residents
-                  </p>
-                </div>
-                <div className="why">
-                  <p className="why-label">Blind because</p>
-                  <ul>
-                    {a.blind_because.map((reason) => (
-                      <li key={reason}>{asClause(reason)}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="action">
-                  {a.check ? (
-                    <>
-                      <p className="do">{a.check.label}</p>
-                      <p className="meta">
-                        <span className="fig">{a.check.minutes}</span> min &middot;{" "}
-                        {a.check.detail}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="do">No check resolves this from here</p>
-                  )}
-                </div>
-              </li>
+              <AssignmentRow
+                key={a.geoid}
+                assignment={a}
+                outcome={completed[a.geoid]}
+                onRecord={(outcome) => record(a.geoid, outcome)}
+                onUndo={() => undo(a.geoid)}
+              />
             ))}
           </ol>
+          <p className="clear-city">
+            Every blind spot in New York clears in roughly{" "}
+            <strong>{hours} crew-hours</strong>. Treating doubt as actionable is
+            usually objected to on the grounds that it does not scale. This is
+            what it would cost.
+          </p>
         </section>
 
         <dl className="record-source">
@@ -182,5 +192,97 @@ export function ShiftBriefing({ onOpenAudit }: { onOpenAudit: () => void }) {
         </dl>
       </div>
     </article>
+  );
+}
+
+
+function AssignmentRow({ assignment, outcome, onRecord, onUndo }: {
+  assignment: Assignment;
+  outcome: Outcome | undefined;
+  onRecord: (outcome: Outcome) => void;
+  onUndo: () => void;
+}) {
+  const a = assignment;
+  const resolved = outcome === "clear" && a.check?.resolves_to.state !== "UNKNOWN";
+  const found = outcome === "problem";
+
+  return (
+    <li className={`assignment${resolved ? " is-cleared" : ""}${found ? " is-flagged" : ""}`}>
+      <span className={`tick${outcome ? " is-done" : ""}`} aria-hidden="true" />
+      <span className="rank fig">{String(a.rank).padStart(2, "0")}</span>
+
+      <div className="where">
+        <p className="place">{a.name}</p>
+        <p className="meta">
+          {a.borough} &middot; Tract {a.geoid.slice(-6)} &middot;{" "}
+          <span className="fig">{a.population.toLocaleString()}</span> residents
+        </p>
+      </div>
+
+      <div className="why">
+        {resolved && a.check ? (
+          <>
+            <p className="why-label">Now</p>
+            <p className="resolved-state">
+              Confirmed low &middot; sufficiency{" "}
+              <span className="fig">{a.sufficiency.toFixed(2)}</span> &rarr;{" "}
+              <span className="fig">{a.check.resolves_to.sufficiency.toFixed(2)}</span>
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="why-label">{found ? "Reported back" : "Blind because"}</p>
+            {found ? (
+              <p className="flagged-state">
+                A problem was found. This is no longer a question of evidence
+                &mdash; it belongs in a response plan.
+              </p>
+            ) : (
+              <ul>
+                {a.blind_because.map((reason) => (
+                  <li key={reason}>{asClause(reason)}</li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="action">
+        {a.check ? (
+          <>
+            <p className="do">{a.check.label}</p>
+            <p className="meta">
+              <span className="fig">{a.check.minutes}</span> min &middot;{" "}
+              {a.check.detail}
+            </p>
+            {a.also_worth_doing && !outcome && (
+              <p className="meta also">
+                Also worth doing: {a.also_worth_doing.label.toLowerCase()} (
+                <span className="fig">{a.also_worth_doing.minutes}</span> min)
+                &mdash; it would not settle the call, but it would most change
+                the response.
+              </p>
+            )}
+            {outcome ? (
+              <button type="button" className="undo" onClick={onUndo}>
+                Undo
+              </button>
+            ) : (
+              <p className="report">
+                <button type="button" onClick={() => onRecord("clear")}>
+                  Came back clear
+                </button>
+                <button type="button" onClick={() => onRecord("problem")}>
+                  Found a problem
+                </button>
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="do">No check resolves this from here</p>
+        )}
+      </div>
+    </li>
   );
 }

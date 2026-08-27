@@ -211,7 +211,14 @@ export interface CoolingFinding {
     geoid: string; name: string; borough: string; population: number;
     listed: number; working: number; gap: number; svi_overall: number | null;
   }[];
+  sensitivity: {
+    label: string; statuses: string[];
+    sites: number; tracts: number; residents: number;
+  }[];
+  sources: SourceLink[];
 }
+
+export interface SourceLink { label: string; url: string; note: string }
 
 export const fetchCoolingFinding = () =>
   apiGet<CoolingFinding>("/api/findings/cooling");
@@ -226,14 +233,22 @@ export interface Briefing {
     citywide_top_quintile_share: number;
     concentration: number;
   };
-  assignments: {
-    rank: number; geoid: string; name: string; borough: string;
-    population: number; residents_at_stake: number;
-    blind_because: string[];
-    check: { label: string; minutes: number; detail: string } | null;
-  }[];
+  assignments: Assignment[];
   check_tally: { check: string; tracts: number; residents: number; minutes: number }[];
   residents_on_the_list: number;
+  minutes_to_clear_the_city: number;
+}
+
+export interface Assignment {
+  rank: number; geoid: string; name: string; borough: string;
+  population: number; residents_at_stake: number;
+  state: string; sufficiency: number;
+  blind_because: string[];
+  check: {
+    key: string; label: string; minutes: number; detail: string;
+    resolves_to: { state: string; sufficiency: number; risk: number };
+  } | null;
+  also_worth_doing: { label: string; minutes: number; detail: string } | null;
 }
 
 export const fetchBriefing = () => apiGet<Briefing>("/api/briefing");
@@ -249,6 +264,7 @@ export interface ReportingFinding {
   over_represented: ComplaintShare[];
   under_represented: ComplaintShare[];
   heat_channels: { kind: string; reports: number; means: string }[];
+  sources: SourceLink[];
 }
 
 export interface ComplaintShare {

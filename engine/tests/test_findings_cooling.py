@@ -63,3 +63,37 @@ def test_shares_are_proportions_and_concentration_derives_from_them(result):
     assert result.concentration == pytest.approx(
         result.overstated_top_quintile_share / result.citywide_top_quintile_share
     )
+
+
+def test_the_claim_survives_its_strictest_reading(result):
+    """The obvious objection is that 'Not Yet Activated' is not 'Broken'.
+
+    So the finding is reported under progressively stricter readings, and the
+    last one counts only sites the city itself calls broken. If that row ever
+    collapsed to nothing the headline would be resting entirely on the softer
+    categories, and the ladder exists to make that visible rather than
+    arguable.
+    """
+    assert result.sensitivity
+    strictest = result.sensitivity[-1]
+
+    assert strictest["statuses"] == ["Broken"]
+    assert strictest["sites"] > 0
+    assert strictest["residents"] > 50_000, (
+        "the strictest reading no longer supports a claim worth making; the "
+        "headline is carried by the softer statuses and should say so"
+    )
+
+
+def test_stricter_readings_never_grow(result):
+    """Each rung drops categories, so nothing it measures may increase.
+
+    Buffers overlap, so the residents figure is not proportional to the site
+    count -- which is exactly why each rung is recomputed from geometry rather
+    than scaled, and why this ordering is worth asserting.
+    """
+    rungs = result.sensitivity
+    for tighter, looser in zip(rungs[1:], rungs):
+        assert tighter["sites"] <= looser["sites"]
+        assert tighter["residents"] <= looser["residents"]
+        assert set(tighter["statuses"]) <= set(looser["statuses"])

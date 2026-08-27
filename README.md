@@ -14,7 +14,7 @@ Three surfaces, in the order they matter:
 
 | | |
 | --- | --- |
-| **Tonight's briefing** | Where to send people, why, and what to do there. The part someone uses. |
+| **Tonight's briefing** | Where to send people, why, what to do there — and record what they found. The part someone uses. |
 | **Heat relief audit** | 100 of New York's 1,026 listed cooling sites report themselves as not working. |
 | **What 311 misses** | Everyone calls at the same rate. Nobody calls about the same things — and nobody can report being too hot. |
 | **Console** | The map, the scenarios, and the scoreboard — where the method gets checked. |
@@ -48,9 +48,29 @@ long-run rate, and never as an absolute hardship measure.
 that cannot be called either way. **59.2%** of them are in the most vulnerable
 fifth of the city, against 24.5% citywide — **2.42×**.
 
-The two meet in the briefing: 93 of the 98 uncertifiable tracts resolve on the
-same action — confirm the cooling centre is open and reachable — and the audit
-is why that check is not a formality.
+The three meet in the briefing, which ranks checks by what would let a tract be
+called at all and lets a crew report back what they found.
+
+## The bug that found itself
+
+Verification was ranked by value of information, which scores how much a result
+would change the **response**. For a tract nobody can call, that is the wrong
+question, and the two came apart badly. In South Jamaica — blind because the
+transit feed is missing — the highest-VOI check was confirming the cooling
+centre: a twenty-minute errand that cannot lift the evidence ceiling, so the
+tract stayed `UNKNOWN` whatever it found. The checks that *would* lift it
+scored a VOI of exactly **zero**.
+
+A project whose entire claim is that risk and evidence sufficiency are
+orthogonal axes had been ranking its own verification queue on one of them.
+
+Checks are now also scored by what they resolve — re-running the assessment
+with the result standing in as evidence, at the accuracy the catalogue already
+declares — and the briefing names the fastest one that would settle the call.
+The night's work went from 93 tracts needing a 20-minute check that could not
+answer the question to 87 needing a **3-minute** one that does. Both are
+reported, because they answer different questions and conflating them is the
+error this project exists to name.
 
 ## What we tried to verify, and could not
 

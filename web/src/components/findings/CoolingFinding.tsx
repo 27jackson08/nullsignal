@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { fetchCoolingFinding, type CoolingFinding as Finding } from "../../lib/api";
+import { SourceList } from "./SourceList";
 import "../../styles/municipal.css";
 import "./cooling-finding.css";
 
@@ -151,12 +152,49 @@ export function CoolingFinding() {
           </div>
         </section>
 
+        <section className="record-section">
+          <h3>Does it survive a hostile reading?</h3>
+          <p className="record-lede">
+            The headline counts every status the city does not call
+            operational, and the fair objection is that those are not equally
+            damning — a site not yet activated is not a broken one. So here is
+            the same claim under progressively stricter readings. The last row
+            counts only what the city itself calls broken.
+          </p>
+          <div className="record-table-wrap">
+            <table className="sensitivity">
+              <thead>
+                <tr>
+                  <th scope="col">Counting</th>
+                  <th scope="col" className="num">Sites</th>
+                  <th scope="col" className="num">Tracts</th>
+                  <th scope="col" className="num">Residents</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.sensitivity.map((row) => (
+                  <tr key={row.label}>
+                    <td>{row.label}</td>
+                    <td className="num fig">{row.sites}</td>
+                    <td className="num fig">{row.tracts}</td>
+                    <td className="num fig">{row.residents.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="record-lede">
+            Each row is recomputed from geometry rather than scaled from the
+            one above it: the walking-distance buffers overlap, so removing a
+            subset of the sites does not remove a proportional share of the
+            coverage.
+          </p>
+        </section>
+
         <dl className="record-source">
-          <dt>Sources</dt>
+          <dt>Check it yourself</dt>
           <dd>
-            NYC Open Data — cooling sites and spray showers, including the
-            published <code>status</code> field. CDC/ATSDR Social Vulnerability
-            Index 2022. US Census tract boundaries.
+            <SourceList sources={data.sources} />
           </dd>
           <dt>Method</dt>
           <dd>

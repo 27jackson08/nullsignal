@@ -26,6 +26,37 @@ OVERSTATEMENT_FLOOR = 0.05
 # How many tracts the surface names individually.
 WORST_LIMIT = 12
 
+# The headline counts every status the city does not call operational, and the
+# obvious objection is that some of those are softer than others -- a site not
+# yet activated is not a broken one. So the claim is also reported under
+# progressively stricter readings, ending with the one nobody can argue with.
+# Each row drops the categories above it.
+SENSITIVITY_LADDER: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("every status the city does not call operational",
+     ("Broken", "Under Construction", "Not Yet Activated", "Unknown")),
+    ("excluding sites whose status is unknown",
+     ("Broken", "Under Construction", "Not Yet Activated")),
+    ("excluding those not yet activated",
+     ("Broken", "Under Construction")),
+    ("counting only sites the city calls broken",
+     ("Broken",)),
+)
+
+
+# Where a reader goes to check this themselves. A finding nobody can verify is
+# an assertion, and this project has no standing to make those.
+SOURCES = (
+    {"label": "Cool It! NYC — cooling sites",
+     "url": "https://data.cityofnewyork.us/d/h2bn-gu9k",
+     "note": "carries the status field this audit reads"},
+    {"label": "Cool It! NYC — spray showers",
+     "url": "https://data.cityofnewyork.us/d/tzuk-eq2f",
+     "note": "same status field, different coordinate system"},
+    {"label": "CDC/ATSDR Social Vulnerability Index 2022",
+     "url": "https://www.atsdr.cdc.gov/place-health/php/svi/",
+     "note": "tract-level vulnerability, unmodified"},
+)
+
 
 @dataclass(frozen=True, slots=True)
 class CoolingAudit:
@@ -39,6 +70,7 @@ class CoolingAudit:
     overstated_top_quintile_share: float
     citywide_top_quintile_share: float
     worst: tuple[dict, ...]
+    sensitivity: tuple[dict, ...]
 
     @property
     def site_broken(self) -> int:
@@ -70,6 +102,8 @@ class CoolingAudit:
                 "concentration": self.concentration,
             },
             "worst": list(self.worst),
+            "sensitivity": list(self.sensitivity),
+            "sources": list(SOURCES),
         }
 
 
@@ -160,6 +194,11 @@ def _audit(con: duckdb.DuckDBPyConnection) -> CoolingAudit:
         ).fetchall()
     ]
 
+    sensitivity = tuple(
+        {"label": label, "statuses": list(statuses), **_gap_excluding(con, statuses)}
+        for label, statuses in SENSITIVITY_LADDER
+    )
+
     return CoolingAudit(
         site_total=int(total), site_working=int(working),
         by_status=tuple(by_status), by_borough=tuple(by_borough),
@@ -168,7 +207,61 @@ def _audit(con: duckdb.DuckDBPyConnection) -> CoolingAudit:
         overstated_top_quintile_share=overstated_share,
         citywide_top_quintile_share=citywide_share,
         worst=tuple(worst),
+        sensitivity=sensitivity,
     )
+
+
+def _gap_excluding(
+    con: duckdb.DuckDBPyConnection, statuses: tuple[str, ...]
+) -> dict:
+    """Coverage lost when only `statuses` are treated as not working.
+
+    Recomputed from geometry rather than scaled from the headline: the buffers
+    overlap, so a subset of the sites does not remove a proportional share of
+    the coverage, and any arithmetic shortcut here would be a guess wearing a
+    number.
+    """
+    from ..store import COOLING_WALK_BUFFER_METRES, GEOGRAPHIC_CRS, PROJECTED_CRS
+
+    quoted = ", ".join(f"'{s}'" for s in statuses)
+    tracts, residents = con.execute(
+        f"""
+        WITH listed AS (
+            SELECT ST_Union_Agg(ST_Buffer(
+                ST_Transform(geom, '{GEOGRAPHIC_CRS}', '{PROJECTED_CRS}', true),
+                {COOLING_WALK_BUFFER_METRES})) AS area FROM cooling_sites
+        ),
+        kept AS (
+            SELECT ST_Union_Agg(ST_Buffer(
+                ST_Transform(geom, '{GEOGRAPHIC_CRS}', '{PROJECTED_CRS}', true),
+                {COOLING_WALK_BUFFER_METRES})) AS area FROM cooling_sites
+            WHERE status NOT IN ({quoted})
+        ),
+        projected AS (
+            SELECT geoid, population,
+                   ST_Transform(geom, '{GEOGRAPHIC_CRS}', '{PROJECTED_CRS}', true) AS geom
+            FROM zones
+        ),
+        gaps AS (
+            SELECT p.population,
+                   LEAST(1.0, GREATEST(0.0, ST_Area(ST_Intersection(p.geom, l.area))
+                                            / NULLIF(ST_Area(p.geom), 0)))
+                 - LEAST(1.0, GREATEST(0.0, ST_Area(ST_Intersection(p.geom, k.area))
+                                            / NULLIF(ST_Area(p.geom), 0))) AS gap
+            FROM projected p CROSS JOIN listed l CROSS JOIN kept k
+        )
+        SELECT COUNT(*) FILTER (WHERE gap > ?),
+               COALESCE(SUM(population) FILTER (WHERE gap > ?), 0)
+        FROM gaps
+        """,
+        [OVERSTATEMENT_FLOOR, OVERSTATEMENT_FLOOR],
+    ).fetchone()
+
+    sites = con.execute(
+        f"SELECT COUNT(*) FROM cooling_sites WHERE status IN ({quoted})"
+    ).fetchone()[0]
+
+    return {"sites": int(sites), "tracts": int(tracts), "residents": int(residents)}
 
 
 def _top_quintile_share(

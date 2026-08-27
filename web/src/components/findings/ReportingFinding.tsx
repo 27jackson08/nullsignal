@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { fetchReportingFinding } from "../../lib/api";
 import type { ComplaintShare, ReportingFinding as Finding } from "../../lib/api";
+import { SourceList } from "./SourceList";
 import "../../styles/municipal.css";
 import "./cooling-finding.css";
 import "./reporting-finding.css";
@@ -136,7 +137,11 @@ export function ReportingFinding() {
             information. A tract that is quieter than the city next door is a
             demographic fact about who calls 311 and about what.
           </dd>
-          <dt>Sources and method</dt>
+          <dt>Check it yourself</dt>
+          <dd>
+            <SourceList sources={data.sources} />
+          </dd>
+          <dt>Method</dt>
           <dd>
             NYC 311 service requests, {data.window.start?.slice(0, 10)} to{" "}
             {data.window.end?.slice(0, 10)}, joined to census tracts by point

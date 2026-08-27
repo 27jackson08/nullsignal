@@ -91,6 +91,37 @@ def test_a_missing_source_is_named_before_a_disagreement():
     assert "unavailable" in reasons[0]
 
 
+def test_the_named_check_is_one_that_could_actually_resolve_the_tract():
+    """The bug this ordering exists to fix.
+
+    Checks were ranked by value of information, which scores how much a result
+    would change the *response*. In a tract blinded by a missing feed the
+    highest-VOI check was confirming the cooling centre -- a twenty-minute
+    errand that cannot lift the evidence ceiling, so the tract stayed UNKNOWN
+    whatever it found. The checks that would lift it scored a VOI of exactly
+    zero. Ranking verification on decision value alone collapses the two axes
+    this project exists to keep apart.
+    """
+    result = briefing.build(assessed([a_blind_tract()]))
+    check = result.assignments[0]["check"]
+
+    assert check is not None, "a blind tract with no resolving check is a finding"
+    assert check["resolves_to"]["state"] != DecisionState.UNKNOWN.value, (
+        f"the named check leaves the tract at {check['resolves_to']['state']}"
+    )
+    assert check["resolves_to"]["sufficiency"] > result.assignments[0]["sufficiency"]
+
+
+def test_a_check_worth_doing_for_other_reasons_is_still_reported():
+    """Kept, not dropped: it answers a different question, and saying so is
+    the distinction rather than an aside."""
+    result = briefing.build(assessed([a_blind_tract()]))
+    also = result.assignments[0]["also_worth_doing"]
+
+    if also is not None:
+        assert also["label"] != result.assignments[0]["check"]["label"]
+
+
 def test_the_tally_counts_every_unresolved_tract_not_just_the_page():
     """The briefing shows eight assignments; the tally must speak for all of
     them, or it understates what the city actually needs tonight."""

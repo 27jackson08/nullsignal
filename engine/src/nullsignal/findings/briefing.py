@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from ..inference.evidence import ZoneEvidence
 from ..labels import source as source_label
 from ..types import DecisionState, ZoneAssessment
+from ..voi import resolution
 
 # A briefing longer than this stops being a shift's work and becomes a report.
 ASSIGNMENT_LIMIT = 8
@@ -33,6 +34,16 @@ class Briefing:
     citywide_top_quintile_share: float
     assignments: tuple[dict, ...]
     check_tally: tuple[dict, ...]
+
+    @property
+    def minutes_to_clear_the_city(self) -> int:
+        """Crew-minutes to resolve every blind spot in New York.
+
+        Worth stating because it is small. The objection to treating doubt as
+        actionable is that acting on it does not scale; the tally says what it
+        would actually cost.
+        """
+        return sum(row["tracts"] * row["minutes"] for row in self.check_tally)
 
     @property
     def residents_on_the_list(self) -> int:
@@ -57,6 +68,7 @@ class Briefing:
             "assignments": list(self.assignments),
             "check_tally": list(self.check_tally),
             "residents_on_the_list": self.residents_on_the_list,
+            "minutes_to_clear_the_city": self.minutes_to_clear_the_city,
         }
 
 
@@ -66,6 +78,7 @@ def build(
     issued_at: str | None = None,
     top_quintile: float | None = None,
     limit: int = ASSIGNMENT_LIMIT,
+    assess=None,
 ) -> Briefing:
     unresolved = [
         (item, ours) for item, ours in assessed
@@ -78,21 +91,28 @@ def build(
         reverse=True,
     )
 
+    if assess is None:
+        from ..inference.engine import assess as assess
+
     assignments = tuple(
-        _assignment(rank, item, ours)
+        _assignment(rank, item, ours, assess)
         for rank, (item, ours) in enumerate(ranked[:limit], start=1)
     )
 
     # Which check the city needs most of tonight, across every unresolved
-    # tract rather than only the ones that fit on the page.
+    # tract rather than only the ones that fit on the page. Counted on the
+    # check that would resolve the tract, not the one with the highest
+    # decision value -- a tally of errands that cannot answer the question
+    # would misdescribe the night's work.
     tally: dict[str, dict] = {}
-    for item, ours in unresolved:
-        check = ours.recommended_checks[0] if ours.recommended_checks else None
-        if check is None:
+    for item, _ in unresolved:
+        found = resolution.cheapest_resolving(item, assess=assess)
+        if found is None:
             continue
         row = tally.setdefault(
-            check.label, {"check": check.label, "tracts": 0, "residents": 0,
-                          "minutes": check.latency_minutes},
+            found.action.label,
+            {"check": found.action.label, "tracts": 0, "residents": 0,
+             "minutes": found.action.latency_minutes},
         )
         row["tracts"] += 1
         row["residents"] += item.zone.population
@@ -109,8 +129,31 @@ def build(
     )
 
 
-def _assignment(rank: int, item: ZoneEvidence, ours: ZoneAssessment) -> dict:
-    check = ours.recommended_checks[0] if ours.recommended_checks else None
+def _assignment(
+    rank: int, item: ZoneEvidence, ours: ZoneAssessment, assess
+) -> dict:
+    """One line of the work order.
+
+    The check named is the one that would let the tract be called, which is not
+    the one with the highest value of information. VOI scores how much a result
+    would change the *response*; for a tract nobody can call, the operator's
+    question is what would let them call it. Both are reported, because they
+    answer different questions and conflating them is the error this project
+    exists to name.
+    """
+    resolving = resolution.cheapest_resolving(item, assess=assess)
+    highest_value = ours.recommended_checks[0] if ours.recommended_checks else None
+
+    also = None
+    if highest_value is not None and (
+        resolving is None or highest_value.key != resolving.action.key
+    ):
+        also = {
+            "label": highest_value.label,
+            "minutes": highest_value.latency_minutes,
+            "detail": highest_value.detail,
+        }
+
     return {
         "rank": rank,
         "geoid": item.zone.geoid,
@@ -118,12 +161,24 @@ def _assignment(rank: int, item: ZoneEvidence, ours: ZoneAssessment) -> dict:
         "borough": item.zone.borough,
         "population": item.zone.population,
         "residents_at_stake": round(ours.unresolved_harm * item.zone.population),
+        "state": ours.state.value,
+        "sufficiency": round(ours.sufficiency.score, 4),
         "blind_because": _blockers(item, ours),
-        "check": None if check is None else {
-            "label": check.label,
-            "minutes": check.latency_minutes,
-            "detail": check.detail,
+        "check": None if resolving is None else {
+            "key": resolving.action.key,
+            "label": resolving.action.label,
+            "minutes": resolving.action.latency_minutes,
+            "detail": resolving.action.detail,
+            # What the tract becomes if it comes back clear. Precomputed so the
+            # loop can close without a backend, and it is the engine's own
+            # answer rather than an animation.
+            "resolves_to": {
+                "state": resolving.state,
+                "sufficiency": resolving.sufficiency,
+                "risk": resolving.risk,
+            },
         },
+        "also_worth_doing": also,
     }
 
 

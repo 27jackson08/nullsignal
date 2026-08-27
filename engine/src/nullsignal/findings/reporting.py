@@ -45,6 +45,16 @@ HEAT_ADJACENT = {
 }
 
 
+SOURCES = (
+    {"label": "NYC 311 service requests",
+     "url": "https://data.cityofnewyork.us/d/erm2-nwe9",
+     "note": "complaint_type and descriptor, geocoded to tracts"},
+    {"label": "CDC/ATSDR Social Vulnerability Index 2022",
+     "url": "https://www.atsdr.cdc.gov/place-health/php/svi/",
+     "note": "the quintiles everything here is grouped by"},
+)
+
+
 @dataclass(frozen=True, slots=True)
 class ReportingFinding:
     window_start: str | None
@@ -72,6 +82,7 @@ class ReportingFinding:
             "over_represented": list(self.over_represented),
             "under_represented": list(self.under_represented),
             "heat_channels": list(self.heat_channels),
+            "sources": list(SOURCES),
         }
 
 
