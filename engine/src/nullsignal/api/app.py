@@ -23,7 +23,7 @@ from . import scenarios as scenario_api
 from .security import SecurityHeadersMiddleware
 from ..sources.snapshot import load_manifest
 from ..store import DB_FILENAME, connect
-from ..types import ZoneAssessment
+from ..types import DecisionState, ZoneAssessment
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 DATA_DIR = REPO_ROOT / "data"
@@ -154,7 +154,25 @@ def _feature(item, ours: ZoneAssessment, theirs: ZoneAssessment, shape: dict) ->
     }
 
 
+def _resolving_check(item, ours: ZoneAssessment):
+    """The fastest check that would let this tract be called, if it cannot be.
+
+    Only computed for zones in UNKNOWN. Everywhere else the tract has already
+    been called and the operator's question is what would change the response,
+    which is what value of information answers.
+    """
+    if ours.state is not DecisionState.UNKNOWN:
+        return None
+    from ..voi.resolution import cheapest_resolving
+    return cheapest_resolving(item, assess=engine.assess)
+
+
 def _queue_row(item, ours: ZoneAssessment) -> dict:
+    # For a tract nobody can call, the highest-value check and the check that
+    # would settle it are different actions -- see voi/resolution. The queue
+    # and the briefing must not recommend different errands for the same
+    # tract, so both name the one that would resolve it.
+    resolving = _resolving_check(item, ours)
     check = ours.recommended_checks[0] if ours.recommended_checks else None
     return {
         "geoid": item.zone.geoid,
@@ -173,8 +191,13 @@ def _queue_row(item, ours: ZoneAssessment) -> dict:
         "risk": round(ours.risk, 4),
         "sufficiency": round(ours.sufficiency.score, 4),
         "decision": ours.current_decision,
-        "next_check": check.label if check else None,
-        "next_check_minutes": check.latency_minutes if check else None,
+        "next_check": (resolving.action.label if resolving
+                       else check.label if check else None),
+        "next_check_minutes": (resolving.action.latency_minutes if resolving
+                               else check.latency_minutes if check else None),
+        # What the named check is for, so the interface can say which question
+        # it answers rather than implying it answers both.
+        "next_check_kind": "resolves" if resolving else "informs",
     }
 
 

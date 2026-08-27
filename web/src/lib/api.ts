@@ -180,6 +180,8 @@ export interface QueueEntry {
   decision: string;
   next_check: string | null;
   next_check_minutes: number | null;
+  /** "resolves" would settle the call; "informs" would change the response. */
+  next_check_kind: "resolves" | "informs";
 }
 
 // The static export writes the whole ranking, so the limit is applied here

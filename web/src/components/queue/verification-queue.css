@@ -48,3 +48,23 @@
 }
 .q-time { color: var(--ink-faint); }
 .queue-error { color: var(--state-high-ink); font-size: .78rem; }
+
+
+/* A tract nobody could call is a different kind of entry from one called
+   narrowly, and the queue holds both. Saying which is which is the whole
+   distinction this product is about. */
+.q-state {
+  margin-left: .4rem;
+  padding: .05rem .3rem;
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--surface);
+  background: var(--ink);
+  vertical-align: .1em;
+}
+
+/* The check that would settle the call, as opposed to the one that would most
+   change the response. */
+.q-check.is-resolving { color: var(--state-low-ink); font-weight: 600; }

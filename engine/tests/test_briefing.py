@@ -138,3 +138,42 @@ def test_shares_are_zero_rather_than_wrong_without_a_quintile():
     result = briefing.build(assessed([a_blind_tract()]), top_quintile=None)
     assert result.top_quintile_share == 0.0
     assert result.concentration == 0.0
+
+
+def test_the_queue_and_the_briefing_never_disagree_about_a_tract():
+    """Two surfaces, one product, one answer.
+
+    The console ranks every tract with residual doubt; the briefing takes only
+    those that cannot be called. They overlap, and for a tract in both the
+    named check must be the same errand. It was not: the queue named the
+    highest-value check and the briefing named the one that would settle the
+    call, so the same tract carried a 20-minute instruction on one screen and a
+    3-minute one on the other.
+    """
+    from nullsignal.api.app import _queue_row
+
+    tracts = [a_blind_tract(geoid="36061000500"), a_clear_tract()]
+    pairs = assessed(tracts)
+    board = briefing.build(pairs)
+
+    rows = {row["geoid"]: row for row in (_queue_row(item, ours) for item, ours in pairs)}
+
+    for assignment in board.assignments:
+        row = rows[assignment["geoid"]]
+        assert row["next_check"] == assignment["check"]["label"], (
+            f"queue says {row['next_check']!r}, briefing says "
+            f"{assignment['check']['label']!r}"
+        )
+        assert row["next_check_kind"] == "resolves"
+
+
+def test_a_tract_that_was_called_is_not_offered_a_resolving_check():
+    """There is nothing to resolve. Offering one would imply the tract is
+    uncertain when the engine has already committed to an answer."""
+    from nullsignal.api.app import _queue_row
+
+    pairs = assessed([a_clear_tract()])
+    row = _queue_row(*pairs[0])
+
+    if pairs[0][1].state is not DecisionState.UNKNOWN:
+        assert row["next_check_kind"] == "informs"

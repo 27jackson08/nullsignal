@@ -47,15 +47,30 @@ Scroll to the assignments.
 > what's blocking the call and gives one action with a time on it. It prints,
 > because the point of an order is that it leaves the screen."
 
+Point at the second column of the first row, then click **Came back clear**.
+
+> "And when the crew reports back, the doubt actually resolves. Sufficiency
+> goes from 0.40 to 0.66, the tract becomes callable, and six thousand people
+> stop standing in a blind spot — not because anything changed on the ground,
+> but because somebody went and looked. That's the whole argument in one
+> click."
+
+If someone asks what happens when it's bad news, click **Found a problem** on
+another row.
+
+> "Then it leaves this list entirely. It's no longer a question of evidence —
+> it belongs in a response plan."
+
 ---
 
 ## Act 2 — Why that check is not a formality (25s)
 
 Scroll back to **Why we ask you to confirm rather than assume**.
 
-> "Ninety-three of those ninety-eight tracts resolve on the same action:
-> confirm the cooling centre is actually open. Three hundred and sixty-six
-> thousand residents behind that one check."
+> "Eighty-seven of those ninety-eight tracts settle on the same three-minute
+> action. And notice the note underneath each one: confirming the cooling
+> centre is *also* worth doing — it wouldn't settle the call, but it's what
+> would most change the response."
 
 Click **Read the audit**.
 
@@ -134,7 +149,16 @@ Open **Result**.
 
 Say the part most demos leave out.
 
-> "Two things I want to be straight about. That 84% is measured against a
+> "Three things I want to be straight about. The check ranking was wrong until
+> recently: we ranked verification by value of information, which scores how
+> much a result changes the *response*. For a tract nobody can call that's the
+> wrong question — the highest-value check was a twenty-minute errand that
+> couldn't lift the ceiling, and the checks that could scored exactly zero. A
+> project claiming risk and evidence are orthogonal was ranking on one axis.
+> It's fixed, and it's in the README, because finding that in your own system
+> is the point.
+>
+> Second, that 84% is measured against a
 > baseline I wrote, in a scenario I wrote — it shows the method works, it isn't
 > proof about the world. The audit is. And we tried to check the equity claim
 > against real outcomes, using EMS heat dispatches the engine never reads.
