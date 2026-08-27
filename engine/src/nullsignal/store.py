@@ -334,6 +334,14 @@ def _load_climatology(con: duckdb.DuckDBPyConnection, path: Path) -> int:
     return _count(con, "climate_normals")
 
 
+# A rate needs a denominator big enough to carry it. Citywide the heat share
+# is 0.0029, so in a district with six dispatches a single heat call reads as
+# 0.33 -- and that was the largest value in the whole dataset. Twelve of the
+# 71 district codes are low-volume special areas of that kind. Below this floor
+# the share is not measured, which is not the same as being zero.
+MIN_EMS_DISPATCHES = 200
+
+
 def _load_ems(con: duckdb.DuckDBPyConnection, path: Path) -> int:
     """Heat-related ambulance dispatches, joined through community district.
 
@@ -355,10 +363,10 @@ def _load_ems(con: duckdb.DuckDBPyConnection, path: Path) -> int:
         [str(path)],
     )
     con.execute(
-        """
+        f"""
         ALTER TABLE zones ADD COLUMN IF NOT EXISTS ems_heat_share DOUBLE;
         UPDATE zones SET ems_heat_share = (
-            SELECT CASE WHEN e.health_dispatches > 0
+            SELECT CASE WHEN e.health_dispatches >= {MIN_EMS_DISPATCHES}
                         THEN e.heat_dispatches * 1.0 / e.health_dispatches END
             FROM ems_dispatches e
             WHERE e.district_id = _district_id(zones.community_district)

@@ -38,6 +38,42 @@ The two meet in the briefing: 93 of the 98 uncertifiable tracts resolve on the
 same action — confirm the cooling centre is open and reachable — and the audit
 is why that check is not a formality.
 
+## What we tried to verify, and could not
+
+The obvious way to test this project's claim is against outcomes: do the tracts
+NullSignal calls blind actually see more heat emergencies? The store carries
+heat-coded EMS dispatches by community district, and nothing in the inference
+layer reads them — `ems_heat_share` appears in no assessment — so it is a
+genuinely held-out variable.
+
+It does not support the claim, and it cannot refute it either.
+
+| | |
+| --- | --- |
+| corr(blind share, heat dispatches per 100k) | **−0.02** |
+| corr(vulnerability, heat dispatches per 100k) | −0.27 |
+| corr(vulnerability, heat share of dispatches) | −0.55 |
+
+The second and third rows are the reason to distrust the first. Heat emergencies
+correlating *negatively* with vulnerability is the opposite of what any account
+of heat mortality predicts, so the measure is not capturing heat causation. The
+window yields about 286 heat-coded dispatches citywide across 59 usable
+districts — roughly five each — and a difference between districts cannot be
+resolved from five events.
+
+Looking at it did find a real bug. The metric was a share with no floor under
+its denominator, so a district with six dispatches and one heat call scored
+**0.33** — the largest value in the entire dataset, against roughly 0.002 for
+every real district. Twelve of the 71 district codes are low-volume special
+areas of that kind. The share is now unmeasured below 200 dispatches, which is
+not the same as zero, and a test holds the floor in place.
+
+So the equity finding stands on exposure, not on outcomes: blind spots fall
+2.42× more often on the most vulnerable fifth of the city. That is a statement
+about who the city cannot see, and it is not the same as a statement about who
+gets hurt. This section is here because a project about not confusing silence
+with safety does not get to quietly drop the check that came back empty.
+
 ## The 2x2
 
 |                      | Sufficiency low | Sufficiency high |

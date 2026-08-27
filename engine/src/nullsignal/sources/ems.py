@@ -2,9 +2,22 @@
 
 A harm signal that owes nothing to 311. Someone calling an ambulance is not
 filing a complaint: it does not depend on knowing the 311 number, on speaking
-English, or on expecting a response. Where the reporting-propensity model has
-to discount what a tract says, this says something about the same tract through
-an entirely different channel.
+English, or on expecting a response.
+
+**Not strong enough to validate anything against.** It was built hoping to test
+the project's own claim -- do the tracts we call blind actually see more heat
+emergencies? -- and it cannot answer that. The window yields roughly 286
+heat-coded dispatches citywide across 59 usable districts, about five each, and
+a difference between districts cannot be resolved from five events. The measure
+also fails its own sanity check: heat dispatches correlate *negatively* with
+vulnerability (-0.27 per capita, -0.55 as a share of health dispatches), which
+is the opposite of what any account of heat mortality predicts, so the coding
+is not capturing heat causation either.
+
+It is kept because it is real data honestly described, and deliberately not
+read by any assessment: `ems_heat_share` appears nowhere in the inference
+layer. Presenting it as corroboration would be the exact move this project
+exists to object to.
 
 Aggregated to community district, the same geography the air survey uses, so
 both cross to tracts through one crosswalk.

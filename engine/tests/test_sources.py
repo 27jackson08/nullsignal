@@ -158,3 +158,19 @@ def test_a_station_with_unusable_coordinates_is_dropped(tmp_path):
          "location_type": "1", "parent_station": ""},
     ])
     assert [s["stop_id"] for s in gtfs_static._extract_stations(archive)] == ["1"]
+
+
+def test_ems_share_is_unmeasured_below_a_usable_denominator():
+    """A rate needs a denominator big enough to carry it.
+
+    Citywide the heat share is 0.0029. In a district with six dispatches one
+    heat call reads as 0.33 -- and that was the largest value in the dataset,
+    ahead of every real district at roughly 0.002. Twelve of the 71 district
+    codes are low-volume special areas of that kind. Below the floor the share
+    must be absent, not zero: this project's whole subject is the difference.
+    """
+    from nullsignal.store import MIN_EMS_DISPATCHES
+
+    assert MIN_EMS_DISPATCHES >= 100, (
+        "a floor this low cannot separate a real rate from a single call"
+    )
