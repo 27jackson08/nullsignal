@@ -19,11 +19,11 @@ import { fetchScenarios, type ScenarioSummary } from "./lib/api";
 import "./styles/global.css";
 
 export default function App() {
-  const { zones, summary, error, isLoading } = useZones();
   const [mode, setMode] = useState<ViewMode>("nullsignal");
   const [scenarios, setScenarios] = useState<ScenarioSummary[]>([]);
   const scenario = useScenario();
   const [surface, setSurface] = useSurface();
+  const { zones, summary, error, isLoading } = useZones(surface === "console");
 
   useEffect(() => {
     fetchScenarios().then(setScenarios).catch(() => setScenarios([]));
@@ -55,9 +55,14 @@ export default function App() {
       />
       {surface !== "console" ? (
         <div className="app-body is-full">
-          {surface === "briefing"
-            ? <ShiftBriefing onOpenAudit={() => setSurface("cooling")} />
-            : <CoolingFinding />}
+          {/* tabIndex on the scrolling region: it is the only way a
+              keyboard-only reader can scroll a long record, and it carries the
+              main landmark for the surface. */}
+          <main className="surface-scroll" tabIndex={0}>
+            {surface === "briefing"
+              ? <ShiftBriefing onOpenAudit={() => setSurface("cooling")} />
+              : <CoolingFinding />}
+          </main>
         </div>
       ) : (
       <div className={mode === "result" ? "app-body is-full" : "app-body"}>

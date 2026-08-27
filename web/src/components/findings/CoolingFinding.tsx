@@ -67,9 +67,9 @@ export function CoolingFinding() {
             <table className="record-table">
               <thead>
                 <tr>
-                  <th>Status, as published</th>
-                  <th>Kind</th>
-                  <th className="num">Sites</th>
+                  <th scope="col">Status, as published</th>
+                  <th scope="col">Kind</th>
+                  <th scope="col" className="num">Sites</th>
                 </tr>
               </thead>
               <tbody>
@@ -121,10 +121,10 @@ export function CoolingFinding() {
               </colgroup>
               <thead>
                 <tr>
-                  <th>Tract</th>
-                  <th>Borough</th>
-                  <th className="num">Residents</th>
-                  <th>Coverage, listed against working</th>
+                  <th scope="col">Tract</th>
+                  <th scope="col">Borough</th>
+                  <th scope="col" className="num">Residents</th>
+                  <th scope="col">Coverage, listed against working</th>
                 </tr>
               </thead>
               <tbody>
