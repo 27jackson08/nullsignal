@@ -16,11 +16,12 @@ Three surfaces, in the order they matter:
 | --- | --- |
 | **Tonight's briefing** | Where to send people, why, and what to do there. The part someone uses. |
 | **Heat relief audit** | 100 of New York's 1,026 listed cooling sites report themselves as not working. |
+| **What 311 misses** | Everyone calls at the same rate. Nobody calls about the same things — and nobody can report being too hot. |
 | **Console** | The map, the scenarios, and the scoreboard — where the method gets checked. |
 
 ## What it found
 
-Two claims about New York, from the city's own published data, with no
+Three claims about New York, from the city's own published data, with no
 simulation involved:
 
 **The city lists heat relief that does not work.** 100 of 1,026 sites are not
@@ -29,6 +30,19 @@ not yet activated, 5 unknown. Buffering listed sites and working sites
 separately puts **570,867 residents** across 162 tracts inside relief that
 exists on paper and not in fact. Seven of the twelve worst tracts have nothing
 working at all: Sunset Park (Central) reads 100% covered and has none.
+
+**311 cannot tell you who is overheating.** Calls run 21.5 per thousand
+residents in the least vulnerable fifth of the city and 25.3 in the most — near
+enough flat. The *mix* is not: at almost identical volume the most vulnerable
+fifth spends its calls on the inside of the home (appliances **6.4×**, plaster
+5.4×, plumbing 4.2×, elevators 3.4×) and the least vulnerable fifth on the
+world outside it (street trees **0.18×**, taxis 0.10×). And in an August
+window the only heat-related complaint type is `HEAT/HOT WATER` — the winter
+complaint about a landlord failing to *supply* heating. There is no way to
+report that your apartment is dangerously hot.
+
+This is why the engine reads reporting as *tempo*, a tract against its own
+long-run rate, and never as an absolute hardship measure.
 
 **The blind spots are not evenly distributed.** 371,137 residents live in tracts
 that cannot be called either way. **59.2%** of them are in the most vulnerable

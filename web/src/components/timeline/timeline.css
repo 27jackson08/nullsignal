@@ -36,15 +36,15 @@
 .transport button.ghost { background: transparent; color: var(--ink-dim); }
 .transport button.ghost:hover { background: var(--surface-raised); color: var(--ink); }
 
-.track { position: relative; padding: var(--space-2) 0 var(--space-3); }
-.track input[type="range"] {
+.timeline .track { position: relative; padding: var(--space-2) 0 var(--space-3); }
+.timeline .track input[type="range"] {
   width: 100%;
   appearance: none;
   height: 3px;
   background: var(--rule-strong);
   cursor: pointer;
 }
-.track input[type="range"]::-webkit-slider-thumb {
+.timeline .track input[type="range"]::-webkit-slider-thumb {
   appearance: none;
   width: .85rem; height: .85rem;
   border-radius: 50%;

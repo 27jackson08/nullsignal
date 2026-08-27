@@ -12,9 +12,9 @@ const PARAM = "surface";
  *  artefact in civic software and says nothing on its own about what this
  *  produces; the work order says it in a headline. The map is one click away
  *  and is where the argument gets checked, not where it gets made. */
-export type Surface = "briefing" | "console" | "cooling";
+export type Surface = "briefing" | "console" | "cooling" | "reporting";
 
-const SURFACES: readonly Surface[] = ["briefing", "console", "cooling"];
+const SURFACES: readonly Surface[] = ["briefing", "console", "cooling", "reporting"];
 
 const DEFAULT_SURFACE: Surface = "briefing";
 

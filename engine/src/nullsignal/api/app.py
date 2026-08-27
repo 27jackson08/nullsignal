@@ -372,6 +372,13 @@ def get_briefing() -> dict:
     return state.briefing
 
 
+@app.get("/api/findings/reporting")
+def get_reporting_finding() -> dict:
+    """What 311 can and cannot tell you. Real data, no simulation involved."""
+    from ..findings.reporting import analyse
+    return analyse(DB_PATH).as_dict()
+
+
 @app.get("/api/findings/cooling")
 def get_cooling_finding() -> dict:
     """The heat-relief audit. Real data, no simulation involved."""

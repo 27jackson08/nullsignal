@@ -18,6 +18,7 @@ const SURFACES: { id: Surface; label: string }[] = [
   { id: "briefing", label: "Tonight\u2019s briefing" },
   { id: "console", label: "Console" },
   { id: "cooling", label: "Heat relief audit" },
+  { id: "reporting", label: "What 311 misses" },
 ];
 
 const MODES: { id: ViewMode; label: string; hint: string; scenarioOnly?: boolean }[] = [

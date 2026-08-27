@@ -55,6 +55,12 @@ def export(out_dir: Path, scenarios_dir: Path, *, scenario_names: list[str] | No
     written["cooling_finding"] = _write(out_dir / "findings" / "cooling.json",
                                         cooling_audit(api_app.DB_PATH).as_dict())
 
+    from ..findings.reporting import analyse as reporting_analysis
+    written["reporting_finding"] = _write(
+        out_dir / "findings" / "reporting.json",
+        reporting_analysis(api_app.DB_PATH).as_dict(),
+    )
+
     listing = scenario_api.list_scenarios(scenarios_dir)
     written["scenario_list"] = _write(out_dir / "scenarios.json", {"scenarios": listing})
 

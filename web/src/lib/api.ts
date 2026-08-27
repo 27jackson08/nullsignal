@@ -237,3 +237,27 @@ export interface Briefing {
 }
 
 export const fetchBriefing = () => apiGet<Briefing>("/api/briefing");
+
+
+export interface ReportingFinding {
+  window: { start: string | null; end: string | null };
+  total_reports: number;
+  volume_by_quintile: {
+    quintile: number; reports: number; residents: number; per_thousand: number;
+  }[];
+  volume_ratio: number;
+  over_represented: ComplaintShare[];
+  under_represented: ComplaintShare[];
+  heat_channels: { kind: string; reports: number; means: string }[];
+}
+
+export interface ComplaintShare {
+  kind: string;
+  least_vulnerable_share: number;
+  most_vulnerable_share: number;
+  ratio: number;
+  reports: number;
+}
+
+export const fetchReportingFinding = () =>
+  apiGet<ReportingFinding>("/api/findings/reporting");

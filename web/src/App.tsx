@@ -10,6 +10,7 @@ import { Scoreboard } from "./components/scoreboard/Scoreboard";
 import { Welcome, hasBeenWelcomed } from "./components/welcome/Welcome";
 import { CoolingFinding } from "./components/findings/CoolingFinding";
 import { ShiftBriefing } from "./components/briefing/ShiftBriefing";
+import { ReportingFinding } from "./components/findings/ReportingFinding";
 import { useSurface } from "./hooks/useSurface";
 import { useSelectedZone } from "./hooks/useSelectedZone";
 import { useScenario } from "./hooks/useScenario";
@@ -59,9 +60,11 @@ export default function App() {
               keyboard-only reader can scroll a long record, and it carries the
               main landmark for the surface. */}
           <main className="surface-scroll" tabIndex={0}>
-            {surface === "briefing"
-              ? <ShiftBriefing onOpenAudit={() => setSurface("cooling")} />
-              : <CoolingFinding />}
+            {surface === "briefing" && (
+              <ShiftBriefing onOpenAudit={() => setSurface("cooling")} />
+            )}
+            {surface === "cooling" && <CoolingFinding />}
+            {surface === "reporting" && <ReportingFinding />}
           </main>
         </div>
       ) : (
