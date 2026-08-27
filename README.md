@@ -24,7 +24,7 @@ Two claims about New York, from the city's own published data, with no
 simulation involved:
 
 **The city lists heat relief that does not work.** 100 of 1,026 sites are not
-operational by NYC's own `status` field — 57 broken, 29 under construction, 10
+operational by NYC's own `status` field — 57 broken, 28 under construction, 10
 not yet activated, 5 unknown. Buffering listed sites and working sites
 separately puts **570,867 residents** across 162 tracts inside relief that
 exists on paper and not in fact. Seven of the twelve worst tracts have nothing
@@ -507,7 +507,7 @@ cooling network is modelled from NYC Parks' Cool It! data — 1,026 misting
 stations and spray showers.
 
 Coverage is computed **twice**: once over every listed site, once over only the
-ones that work. `status` marks 57 broken, 28 under construction and 10 never
+ones that work. `status` marks 57 broken, 28 under construction and 10 not yet
 activated, so a system counting listed sites overstates available relief — and
 does so invisibly, because a broken misting station looks like a working one in
 any dataset that does not read the field.
