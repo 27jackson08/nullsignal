@@ -280,7 +280,12 @@ function AssignmentRow({ assignment, outcome, onRecord, onUndo }: {
             )}
           </>
         ) : (
-          <p className="do">No check resolves this from here</p>
+          <>
+            <p className="do">No check would settle this</p>
+            {a.nothing_resolves && (
+              <p className="meta stuck">{a.nothing_resolves}.</p>
+            )}
+          </>
         )}
       </div>
     </li>

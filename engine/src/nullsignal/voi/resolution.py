@@ -31,15 +31,19 @@ from .actions import ACTIONS, VerificationAction
 # The feed each check stands in for. A check is not a new sensor: calling
 # transit control answers the question the realtime feed would have answered,
 # so it substitutes for that feed rather than adding a source beside it.
-SUBSTITUTES_FOR: dict[str, str | None] = {
-    "call_transit_ops": "gtfs_rt",
-    "alternate_transit_feed": "gtfs_rt",
-    "resident_callback": "311",
-    # Direct observation of the tract: it answers for everything.
-    "field_inspection": "*",
+SUBSTITUTES_FOR: dict[str, tuple[str, ...]] = {
+    "call_transit_ops": ("gtfs_rt",),
+    "alternate_transit_feed": ("gtfs_rt",),
+    "resident_callback": ("311",),
+    # An inspector sees the weather, the service and the state of the street.
+    # They cannot see a census statistic: where CDC has suppressed a tract's
+    # vulnerability index, no amount of looking produces one. Listing cdc_svi
+    # here would claim a crew can resolve a blind spot only the publisher can,
+    # which is the same overclaim as reading silence as safety.
+    "field_inspection": ("nws", "gtfs_rt", "311"),
     # About whether the mitigation exists, not about any feed. It can change
     # what you would do and cannot restore what you cannot see.
-    "cooling_centre_check": None,
+    "cooling_centre_check": (),
 }
 
 
@@ -105,22 +109,21 @@ def cheapest_resolving(
 
 
 def _with_result(evidence: ZoneEvidence, action: VerificationAction) -> ZoneEvidence:
-    substitute = SUBSTITUTES_FOR.get(action.key)
-    if substitute is None:
+    substitutes = SUBSTITUTES_FOR.get(action.key, ())
+    if not substitutes:
         return evidence
 
     verified = Reliability(
         freshness=1.0, coverage=1.0, liveness=1.0, accuracy=action.accuracy,
     )
     reliability = dict(evidence.source_reliability)
-    if substitute == "*":
-        reliability = {name: verified for name in reliability}
-    else:
-        reliability[substitute] = verified
+    for name in substitutes:
+        if name in reliability:
+            reliability[name] = verified
 
     updated = replace(evidence, source_reliability=reliability)
     # "Came back clear" means the thing it asked about is not happening.
-    if substitute in ("gtfs_rt", "*"):
+    if "gtfs_rt" in substitutes:
         updated = replace(updated, transit_alerts=0)
     return updated
 

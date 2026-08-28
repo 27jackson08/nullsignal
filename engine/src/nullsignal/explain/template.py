@@ -47,11 +47,22 @@ def _conflicts(packet: EvidencePacket) -> str:
 
 
 def _recommendation(packet: EvidencePacket) -> str:
+    """Named for what it does.
+
+    This read "the check that would resolve the most", which is a claim the
+    ranking behind it does not make. Value of information scores how much a
+    result would change the *response*; for a tract nobody can call, the check
+    that would settle the call is frequently a different action entirely, and
+    sometimes there isn't one. Saying "resolve" of a check that resolves
+    nothing is the overclaim this project exists to object to, committed in its
+    own prose. See voi/resolution.
+    """
     if not packet.next_check:
         return ""
     minutes = (f" ({packet.next_check_minutes} minutes)"
                if packet.next_check_minutes is not None else "")
-    return f"The check that would resolve the most is: {packet.next_check.lower()}{minutes}."
+    return (f"The check that would most change the response is: "
+            f"{packet.next_check.lower()}{minutes}.")
 
 
 def _join(items) -> str:

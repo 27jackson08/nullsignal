@@ -164,6 +164,7 @@ def _assignment(
         "state": ours.state.value,
         "sufficiency": round(ours.sufficiency.score, 4),
         "blind_because": _blockers(item, ours),
+        "nothing_resolves": None if resolving is not None else _why_stuck(item),
         "check": None if resolving is None else {
             "key": resolving.action.key,
             "label": resolving.action.label,
@@ -180,6 +181,26 @@ def _assignment(
         },
         "also_worth_doing": also,
     }
+
+
+def _why_stuck(item: ZoneEvidence) -> str:
+    """Why no crew can settle this one.
+
+    Worth stating rather than leaving as a blank action. A tract whose
+    vulnerability index CDC has suppressed cannot be resolved by looking at it:
+    an inspector sees the weather, the service and the street, and no amount of
+    looking produces a census statistic. That is a publication problem wearing
+    the appearance of an operational one, and sending a crew would waste a
+    shift on it.
+    """
+    missing = set(item.missing_critical_sources)
+    if "cdc_svi" in missing:
+        return ("the vulnerability data for this tract is suppressed at source, "
+                "and no field check can produce it")
+    if missing:
+        named = ", ".join(source_label(name) for name in sorted(missing))
+        return f"nothing in the catalogue substitutes for {named}"
+    return "the evidence is thin in a way no single check would settle"
 
 
 def _blockers(item: ZoneEvidence, ours: ZoneAssessment) -> tuple[str, ...]:

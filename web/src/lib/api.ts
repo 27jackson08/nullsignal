@@ -248,6 +248,8 @@ export interface Assignment {
   population: number; residents_at_stake: number;
   state: string; sufficiency: number;
   blind_because: string[];
+  /** Set when no check in the catalogue could settle this tract. */
+  nothing_resolves: string | null;
   check: {
     key: string; label: string; minutes: number; detail: string;
     resolves_to: { state: string; sufficiency: number; risk: number };

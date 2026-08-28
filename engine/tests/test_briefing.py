@@ -177,3 +177,43 @@ def test_a_tract_that_was_called_is_not_offered_a_resolving_check():
 
     if pairs[0][1].state is not DecisionState.UNKNOWN:
         assert row["next_check_kind"] == "informs"
+
+
+def test_no_check_claims_to_produce_a_suppressed_statistic():
+    """An inspector sees the street. They do not see a census table.
+
+    Eleven tracts are blind because CDC suppressed their vulnerability index,
+    and the resolution model originally let a field inspection stand in for
+    every source, so those tracts were issued a 55-minute errand that could not
+    possibly settle them. A blind spot only the publisher can fix must not be
+    dressed as one a crew can.
+    """
+    from nullsignal.voi.actions import ACTIONS
+    from nullsignal.voi.resolution import SUBSTITUTES_FOR
+
+    assert set(SUBSTITUTES_FOR) == {a.key for a in ACTIONS}, (
+        "an action with no declared substitution is silently unresolvable"
+    )
+    for key, substitutes in SUBSTITUTES_FOR.items():
+        assert "cdc_svi" not in substitutes, (
+            f"{key} claims to produce a suppressed census statistic"
+        )
+
+
+def test_a_tract_nothing_can_settle_says_why():
+    """A blank action reads as an oversight. The reason is the useful part."""
+    from nullsignal.types import Reliability
+
+    stuck = make_evidence(
+        zone=make_zone(geoid="36061000700", population=4000, svi_overall=None),
+        sources={**HEALTHY, "cdc_svi": Reliability.absent()},
+        propensity=make_propensity(),
+    )
+    result = briefing.build(assessed([stuck]))
+    if not result.assignments:
+        pytest.skip("fixture is not unresolvable in this configuration")
+
+    assignment = result.assignments[0]
+    if assignment["check"] is None:
+        assert assignment["nothing_resolves"]
+        assert "suppressed" in assignment["nothing_resolves"]

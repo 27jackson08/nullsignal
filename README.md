@@ -75,6 +75,15 @@ orthogonal axes had been ranking its own verification queue on one of them.
 Checks are now also scored by what they resolve — re-running the assessment
 with the result standing in as evidence, at the accuracy the catalogue already
 declares — and the briefing names the fastest one that would settle the call.
+
+Getting that right required admitting what a check cannot do. The first version
+let a field inspection stand in for every source, including CDC's Social
+Vulnerability Index. An inspector sees the weather, the service and the street;
+they do not see a census statistic. **Eleven tracts are blind because CDC
+suppressed their vulnerability data, and no field action can resolve them** —
+they were being issued a 55-minute errand that could not possibly settle them.
+The briefing now says so instead: a blind spot only the publisher can fix must
+not be dressed as one a crew can.
 The night's work went from 93 tracts needing a 20-minute check that could not
 answer the question to 87 needing a **3-minute** one that does. Both are
 reported, because they answer different questions and conflating them is the

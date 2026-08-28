@@ -264,3 +264,12 @@
 @media print {
   .assignment .report, .assignment .undo, .reset-order { display: none !important; }
 }
+
+/* A tract no crew can settle. Said plainly rather than left as a blank action:
+   sending someone would waste a shift on a problem that is not theirs. */
+.assignment .stuck {
+  margin-top: .4rem;
+  padding-left: .6rem;
+  border-left: 2px solid var(--alarm);
+  color: var(--ink-dim);
+}
