@@ -196,8 +196,15 @@ def _queue_row(item, ours: ZoneAssessment) -> dict:
         "next_check_minutes": (resolving.action.latency_minutes if resolving
                                else check.latency_minutes if check else None),
         # What the named check is for, so the interface can say which question
-        # it answers rather than implying it answers both.
-        "next_check_kind": "resolves" if resolving else "informs",
+        # it answers rather than implying it answers both. A tract nobody can
+        # call, and that nothing in the catalogue would settle, gets neither:
+        # showing a check beside it reads as "do this and you will know", which
+        # is exactly the claim being corrected.
+        "next_check_kind": (
+            "resolves" if resolving
+            else "unresolvable" if ours.state is DecisionState.UNKNOWN
+            else "informs"
+        ),
     }
 
 

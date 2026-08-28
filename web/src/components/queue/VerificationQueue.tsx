@@ -57,7 +57,11 @@ export function VerificationQueue({ onSelect, limit = 8 }: VerificationQueueProp
                 &middot; {entry.population.toLocaleString()} residents
                 &middot; {entry.borough}
               </span>
-              {entry.next_check && (
+              {entry.next_check_kind === "unresolvable" ? (
+                /* Naming a check here would read as "do this and you will
+                   know". Nothing in the catalogue would settle these. */
+                <span className="q-check is-stuck">No check would settle this</span>
+              ) : entry.next_check && (
                 <span className={entry.next_check_kind === "resolves"
                   ? "q-check is-resolving" : "q-check"}>
                   {entry.next_check}

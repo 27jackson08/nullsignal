@@ -182,8 +182,9 @@ export interface QueueEntry {
   decision: string;
   next_check: string | null;
   next_check_minutes: number | null;
-  /** "resolves" would settle the call; "informs" would change the response. */
-  next_check_kind: "resolves" | "informs";
+  /** "resolves" would settle the call, "informs" would change the response,
+   *  "unresolvable" means nothing in the catalogue would settle it at all. */
+  next_check_kind: "resolves" | "informs" | "unresolvable";
 }
 
 // The static export writes the whole ranking, so the limit is applied here
@@ -241,6 +242,8 @@ export interface Briefing {
   check_tally: { check: string; tracts: number; residents: number; minutes: number }[];
   residents_on_the_list: number;
   minutes_to_clear_the_city: number;
+  reachable_tracts: number;
+  unreachable_tracts: number;
 }
 
 export interface Assignment {

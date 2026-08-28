@@ -37,13 +37,23 @@ class Briefing:
 
     @property
     def minutes_to_clear_the_city(self) -> int:
-        """Crew-minutes to resolve every blind spot in New York.
+        """Crew-minutes to settle every blind spot a crew could settle.
 
-        Worth stating because it is small. The objection to treating doubt as
-        actionable is that acting on it does not scale; the tally says what it
-        would actually cost.
+        Worth stating because it is small: the objection to treating doubt as
+        actionable is that acting on it does not scale, and the tally says what
+        it would actually cost. Worth bounding for the same reason -- it covers
+        the tracts a check can reach, and `unreachable_tracts` is the rest.
         """
         return sum(row["tracts"] * row["minutes"] for row in self.check_tally)
+
+    @property
+    def reachable_tracts(self) -> int:
+        return sum(row["tracts"] for row in self.check_tally)
+
+    @property
+    def unreachable_tracts(self) -> int:
+        """Blind spots no field action can settle, at any cost."""
+        return self.uncertifiable_tracts - self.reachable_tracts
 
     @property
     def residents_on_the_list(self) -> int:
@@ -69,6 +79,8 @@ class Briefing:
             "check_tally": list(self.check_tally),
             "residents_on_the_list": self.residents_on_the_list,
             "minutes_to_clear_the_city": self.minutes_to_clear_the_city,
+            "reachable_tracts": self.reachable_tracts,
+            "unreachable_tracts": self.unreachable_tracts,
         }
 
 

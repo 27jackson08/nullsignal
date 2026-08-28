@@ -217,3 +217,58 @@ def test_a_tract_nothing_can_settle_says_why():
     if assignment["check"] is None:
         assert assignment["nothing_resolves"]
         assert "suppressed" in assignment["nothing_resolves"]
+
+
+def test_the_cost_to_clear_the_city_covers_only_what_a_crew_can_reach():
+    """The claim is that acting on doubt is cheap. It must not be cheap by
+    quietly excluding the tracts nobody can act on.
+
+    The tally counts tracts a check could settle; the eleven whose
+    vulnerability data is suppressed are not among them, and a sentence saying
+    "every blind spot clears in four crew-hours" would be false by exactly that
+    margin.
+    """
+    from nullsignal.types import Reliability
+
+    reachable = a_blind_tract(geoid="36061001100")
+    stuck = make_evidence(
+        zone=make_zone(geoid="36061001200", population=4000, svi_overall=None),
+        sources={**HEALTHY, "cdc_svi": Reliability.absent()},
+        propensity=make_propensity(),
+    )
+    result = briefing.build(assessed([reachable, stuck]))
+
+    assert result.reachable_tracts + result.unreachable_tracts == \
+        result.uncertifiable_tracts
+    assert result.unreachable_tracts >= 0
+
+
+def test_a_resolving_check_is_only_offered_where_there_is_doubt_to_resolve():
+    """One direction only.
+
+    Every check marked as resolving must belong to a tract that could not be
+    called. The converse does not hold: 94 unknown tracts have nothing in the
+    catalogue that would settle them -- 83 with no residents, 11 whose
+    vulnerability data is suppressed -- and they are marked unresolvable rather
+    than shown a check, because naming one beside them reads as "do this and
+    you will know".
+    """
+    from nullsignal.api.app import _queue_row
+    from nullsignal.types import Reliability
+
+    stuck = make_evidence(
+        zone=make_zone(geoid="36061001300", population=4000, svi_overall=None),
+        sources={**HEALTHY, "cdc_svi": Reliability.absent()},
+        propensity=make_propensity(),
+    )
+    pairs = assessed([a_blind_tract(geoid="36061001400"), a_clear_tract(), stuck])
+
+    for item, ours in pairs:
+        row = _queue_row(item, ours)
+        if row["next_check_kind"] in ("resolves", "unresolvable"):
+            assert ours.state is DecisionState.UNKNOWN, (
+                f"{row['name']} is {ours.state.value} but its check is marked "
+                f"{row['next_check_kind']!r}"
+            )
+        if row["next_check_kind"] == "informs":
+            assert ours.state is not DecisionState.UNKNOWN

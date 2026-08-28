@@ -68,3 +68,7 @@
 /* The check that would settle the call, as opposed to the one that would most
    change the response. */
 .q-check.is-resolving { color: var(--state-low-ink); font-weight: 600; }
+
+/* Nothing in the catalogue would settle this one. Said rather than shown as a
+   check, which would read as "do this and you will know". */
+.q-check.is-stuck { color: var(--alarm); font-weight: 600; }

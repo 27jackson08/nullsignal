@@ -166,10 +166,19 @@ export function ShiftBriefing({ onOpenAudit }: { onOpenAudit: () => void }) {
             ))}
           </ol>
           <p className="clear-city">
-            Every blind spot in New York clears in roughly{" "}
-            <strong>{hours} crew-hours</strong>. Treating doubt as actionable is
-            usually objected to on the grounds that it does not scale. This is
-            what it would cost.
+            <strong>{data.reachable_tracts}</strong> of the{" "}
+            {situation.uncertifiable_tracts} blind spots clear in roughly{" "}
+            <strong>{hours} crew-hours</strong> between them. Treating doubt as
+            actionable is usually objected to on the grounds that it does not
+            scale; this is what it would actually cost.
+            {data.unreachable_tracts > 0 && (
+              <>
+                {" "}The remaining <strong>{data.unreachable_tracts}</strong>{" "}
+                clear for nobody at any price: their vulnerability data is
+                suppressed at source, and no amount of looking produces a
+                census statistic.
+              </>
+            )}
           </p>
         </section>
 
