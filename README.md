@@ -46,7 +46,15 @@ long-run rate, and never as an absolute hardship measure.
 
 **The blind spots are not evenly distributed.** 371,137 residents live in tracts
 that cannot be called either way. **59.2%** of them are in the most vulnerable
-fifth of the city, against 24.5% citywide — **2.42×**.
+fifth of the city, against 24.5% citywide — **2.42×**. Of those,
+**328,573 across 89 tracts** are being called safe right now by a conventional
+threshold dashboard.
+
+> Counted over inhabited tracts only. New York has 83 census tracts where
+> nobody lives — cemeteries, parks, the Hunts Point market — and they are as
+> unobservable as anywhere else, so they land in `UNKNOWN` honestly. Including
+> them inflated that headline from 89 tracts to 168. A number about people
+> counts people, and a test now holds it to that.
 
 The three meet in the briefing, which ranks checks by what would let a tract be
 called at all and lets a crew report back what they found.

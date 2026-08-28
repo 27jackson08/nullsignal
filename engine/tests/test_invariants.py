@@ -240,3 +240,42 @@ def test_a_merely_weakened_source_is_not_treated_as_absent():
     evidence = make_evidence(sources=sources, heat_index_f=70.0)
     assert "nws" not in evidence.missing_critical_sources
     assert engine.assess(evidence).state is DecisionState.CONFIRMED_LOW
+
+
+def test_empty_land_never_inflates_the_headline():
+    """New York has 83 census tracts nobody lives in.
+
+    Cemeteries, parks and the Hunts Point market are exactly as unobservable as
+    anywhere else, so they land in UNKNOWN honestly -- and counting them in the
+    number the interface leads with inflated it by 47%, from 89 inhabited
+    tracts to 168. The same error as ranking a cemetery top of the verification
+    queue, in the one figure a reader sees first.
+    """
+    from nullsignal.api.app import _summary
+    from nullsignal.eval import baseline
+    from nullsignal.inference import engine
+
+    from helpers import make_evidence, make_propensity, make_zone
+    from nullsignal.types import Reliability
+
+    healthy = {n: Reliability() for n in ("311", "nws", "gtfs_rt", "cdc_svi")}
+    # Below the 95F advisory line, so the threshold dashboard is reassured by
+    # the weather and the difference under test is the missing feed.
+    blind = dict(sources={**healthy, "gtfs_rt": Reliability.absent()},
+                 heat_index_f=86.0, propensity=make_propensity())
+
+    inhabited = make_evidence(
+        zone=make_zone(geoid="36061000100", population=5000), **blind)
+    cemetery = make_evidence(
+        zone=make_zone(geoid="36061009900", population=0), **blind)
+
+    thresholds = baseline.calibrate([inhabited, cemetery])
+    assessed = [(e, engine.assess(e), baseline.assess(e, thresholds))
+                for e in (inhabited, cemetery)]
+
+    summary = _summary(assessed, {})
+
+    assert summary["reassured_residents"] == 5000
+    assert summary["reassured_by_baseline_only"] <= 1, (
+        "a tract with no residents is being counted in a figure about people"
+    )

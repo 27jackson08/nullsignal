@@ -62,10 +62,17 @@ export function AppHeader({
       </nav>
 
       {surface === "console" && (
-      <div className="headline-stat" title="Tracts a conventional dashboard calls safe that we will not">
+      <div
+        className="headline-stat"
+        title="Inhabited tracts a conventional dashboard calls safe that we will not"
+      >
         <span className="label">Called safe on evidence we don&rsquo;t have</span>
-        <strong className="numeric">{overclaimed}</strong>
-        <span className="denom numeric">of {summary?.zone_count ?? 0} tracts</span>
+        <strong className="numeric">
+          {(summary?.reassured_residents ?? 0).toLocaleString()}
+        </strong>
+        <span className="denom numeric">
+          residents in {overclaimed} tracts
+        </span>
       </div>
       )}
 

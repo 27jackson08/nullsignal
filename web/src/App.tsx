@@ -74,8 +74,8 @@ export default function App() {
               headline; a modal explaining it would be noise. */}
           {showWelcome && surface === "console" && !isLoading && !error && (
             <Welcome
+              residents={summary?.reassured_residents ?? null}
               unknownCount={summary?.reassured_by_baseline_only ?? null}
-              zoneCount={summary?.zone_count ?? null}
               onDismiss={() => setShowWelcome(false)}
               onLoadScenario={(name) => scenario.load(name)}
             />

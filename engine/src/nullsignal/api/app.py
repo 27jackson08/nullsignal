@@ -204,9 +204,15 @@ def _queue_row(item, ours: ZoneAssessment) -> dict:
 def _summary(assessed: list, feed_health: dict[str, FeedHealth]) -> dict:
     counts: dict[str, dict[str, int]] = {"nullsignal": {}, "baseline": {}}
     disagreements = 0
+    # Counted over inhabited tracts only. New York has 83 census tracts with no
+    # residents -- cemeteries, parks, the Hunts Point market -- and they are as
+    # unobservable as anywhere else, so they land in UNKNOWN and were inflating
+    # the headline by 47%. A number about people should count people.
     reassured_by_baseline_only = 0
+    reassured_residents = 0
+    reassured_including_empty = 0
 
-    for _, ours, theirs in assessed:
+    for item, ours, theirs in assessed:
         counts["nullsignal"][ours.state.value] = \
             counts["nullsignal"].get(ours.state.value, 0) + 1
         counts["baseline"][theirs.state.value] = \
@@ -214,13 +220,19 @@ def _summary(assessed: list, feed_health: dict[str, FeedHealth]) -> dict:
         if ours.state is not theirs.state:
             disagreements += 1
         if theirs.state.is_reassuring and not ours.state.is_reassuring:
-            reassured_by_baseline_only += 1
+            reassured_including_empty += 1
+            if item.zone.population > 0:
+                reassured_by_baseline_only += 1
+                reassured_residents += item.zone.population
 
     return {
         "zone_count": len(assessed),
         "states": counts,
         "disagreements": disagreements,
         "reassured_by_baseline_only": reassured_by_baseline_only,
+        "reassured_residents": reassured_residents,
+        # Kept so the difference is inspectable rather than merely corrected.
+        "reassured_including_empty": reassured_including_empty,
         "snapshot": _manifest_summary(),
         "feeds": _feed_summary(feed_health),
     }

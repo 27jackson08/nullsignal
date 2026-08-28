@@ -26,13 +26,13 @@ function remember() {
 }
 
 interface Props {
+  residents: number | null;
   unknownCount: number | null;
-  zoneCount: number | null;
   onDismiss: () => void;
   onLoadScenario: (name: string) => void;
 }
 
-export function Welcome({ unknownCount, zoneCount, onDismiss, onLoadScenario }: Props) {
+export function Welcome({ residents, unknownCount, onDismiss, onLoadScenario }: Props) {
   const primary = useRef<HTMLButtonElement>(null);
 
   function close() {
@@ -78,11 +78,11 @@ export function Welcome({ unknownCount, zoneCount, onDismiss, onLoadScenario }: 
           </div>
         </dl>
 
-        {unknownCount !== null && zoneCount !== null && (
+        {residents !== null && unknownCount !== null && (
           <p className="welcome-stat">
-            <strong>{unknownCount.toLocaleString()}</strong> of{" "}
-            {zoneCount.toLocaleString()} tracts are being called safe right now
-            on evidence nobody actually has.
+            <strong>{residents.toLocaleString()}</strong> New Yorkers, across{" "}
+            {unknownCount} tracts, are being called safe right now on evidence
+            nobody actually has.
           </p>
         )}
 

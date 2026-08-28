@@ -131,6 +131,8 @@ export interface Summary {
   };
   disagreements: number;
   reassured_by_baseline_only: number;
+  reassured_residents: number;
+  reassured_including_empty: number;
   feeds: FeedHealth[];
   snapshot: {
     available: boolean;
