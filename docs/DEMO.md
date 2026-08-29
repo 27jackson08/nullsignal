@@ -217,6 +217,7 @@ a GTFS-realtime feed, and census geography needs new adapters, not new logic.
 | Briefing or audit won't load | store missing | `make build` |
 | "Engine unreachable" | API not running | `uv run nullsignal serve` |
 | Welcome card in your first frame | first visit in this browser | open the console once and dismiss it |
+| Printed order stops partway | stale build | the shell unwinds for paper since 2026-08-29; rebuild |
 | Scenario slow on first scrub | simulation not cached | run `nullsignal eval` first |
 | Explanation reads flatly | no `ANTHROPIC_API_KEY` | expected; the template is the floor |
 

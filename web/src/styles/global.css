@@ -106,3 +106,23 @@ body {
   white-space: nowrap;
   border: 0;
 }
+
+/* Printing.
+   ---------------------------------------------------------------------------
+   The shell is a fixed-height grid because the map has to fill a viewport and
+   the panels scroll independently. On paper that is exactly wrong: every
+   height cap and every scroll container becomes a guillotine, and the briefing
+   would print its first screen and stop. Unwind the whole stack so the
+   document flows. */
+@media print {
+  html, body, #root { height: auto; overflow: visible; }
+
+  .app-shell,
+  .app-shell.has-timeline { height: auto; display: block; }
+
+  .app-body,
+  .app-body.is-full { display: block; min-height: 0; }
+
+  /* The scrolling landmark added for keyboard access clips the page here. */
+  .surface-scroll { overflow: visible; height: auto; max-height: none; }
+}

@@ -149,7 +149,7 @@
 
 @media print {
   .app-header, .print-order { display: none !important; }
-  .record { overflow: visible; }
+  .record { overflow: visible; height: auto; }
   .record-masthead { break-after: avoid; }
   .assignment { break-inside: avoid; }
   .situation-figure .n, .record-count .n { color: #000; }
