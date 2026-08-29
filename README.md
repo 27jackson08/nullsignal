@@ -628,8 +628,8 @@ uv run pytest               # 170 passed
 uv run nullsignal eval      # identical to the working directory
 ```
 
-The scoreboard is anchored to when the snapshot was taken, not to when the
-evaluation runs. Without that it drifted as the fixtures aged — 311 freshness
+Everything published is anchored to when the snapshot was taken, not to when
+the code runs. Without that it drifted as the fixtures aged — 311 freshness
 decays against wall clock, so the unresolved rate crept by more than three
 points at a week and four at a month. A number that changes depending on the calendar is
 an anecdote, so it is now a property of the scenario and the snapshot alone.

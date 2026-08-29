@@ -279,3 +279,27 @@ def test_empty_land_never_inflates_the_headline():
     assert summary["reassured_by_baseline_only"] <= 1, (
         "a tract with no residents is being counted in a figure about people"
     )
+
+
+def test_the_interface_reads_the_snapshot_clock_not_the_wall_clock():
+    """Every figure a reader sees must be a property of the snapshot.
+
+    Freshness decays against whatever clock it is given. The eval was anchored
+    to when the snapshot was taken for exactly this reason, and the API was
+    not, so the briefing, the queue and the headline all drifted as the
+    committed fixtures aged: a working copy and a clean clone of the same
+    commit disagreed by 3,092 residents purely because their stores were built
+    hours apart. The claim was true of the scoreboard and false of everything
+    a reader actually looks at.
+    """
+    import inspect
+
+    from nullsignal.api import app
+
+    source = inspect.getsource(app._rebuild)
+    assert "observed_at=" in source, (
+        "_rebuild loads evidence without an observation time, so it falls "
+        "through to datetime.now() and every published figure moves with the "
+        "calendar"
+    )
+    assert "snapshot_taken_at" in source

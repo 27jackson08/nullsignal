@@ -76,7 +76,16 @@ def _rebuild() -> None:
             f"no store at {DB_PATH}. Run: uv run nullsignal snapshot && uv run nullsignal build"
         )
 
-    evidence = pipeline.load_evidence(DB_PATH, raw_dir=RAW_DIR)
+    # Anchored to when the snapshot was taken, not to when the server started.
+    # Freshness decays against this clock, so an unanchored read moves every
+    # figure in the interface as the committed fixtures age: a working copy and
+    # a clean clone of the same commit disagreed by 3,092 residents purely
+    # because their stores were built hours apart. The eval was anchored for
+    # this reason and the surfaces were not, which left the claim true of the
+    # scoreboard and false of everything a reader actually sees.
+    from ..eval.report import snapshot_taken_at
+    taken = snapshot_taken_at(RAW_DIR, DB_PATH)
+    evidence = pipeline.load_evidence(DB_PATH, raw_dir=RAW_DIR, observed_at=taken)
     feed_health = assess_feeds(RAW_DIR)
     geometry = _load_geometry()
     # Calibrated against this snapshot so the comparison is against a dashboard
@@ -109,9 +118,7 @@ def _rebuild() -> None:
     state.playback_cache = {}
     state.summary = _summary(assessed, feed_health)
 
-    from ..eval.report import snapshot_taken_at
     from ..findings.briefing import build as build_briefing
-    taken = snapshot_taken_at(RAW_DIR, DB_PATH)
     state.briefing = build_briefing(
         [(item, ours) for item, ours, _ in assessed],
         issued_at=None if taken is None else taken.isoformat(),
