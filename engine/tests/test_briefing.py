@@ -272,3 +272,31 @@ def test_a_resolving_check_is_only_offered_where_there_is_doubt_to_resolve():
             )
         if row["next_check_kind"] == "informs":
             assert ours.state is not DecisionState.UNKNOWN
+
+
+def test_a_tract_we_understand_needs_no_attention_however_bad_it_is():
+    """The queue's own claim about itself, which live data cannot test.
+
+    No tract in the current snapshot is both high risk and well understood, so
+    the assertion has nothing to bite on there. Stated on the arithmetic
+    instead: doubt multiplies the harm, so a tract we are certain about
+    contributes nothing to the ranking no matter how dangerous it is. That is
+    what makes this a verification queue rather than a risk map, and it is the
+    sentence printed above the queue in the interface.
+    """
+    from nullsignal.inference.hypotheses import Regime, World
+    from nullsignal.voi.evpi import unresolved_harm
+
+    # As dangerous as the hypothesis space allows. Keys are "world/regime".
+    dire = {f"{World.HEAT_STRANDED}/{Regime.FAITHFUL}": 1.0}
+
+    settled = unresolved_harm(dire, sufficiency=1.0)
+    open_question = unresolved_harm(dire, sufficiency=0.2)
+
+    assert settled == pytest.approx(0.0, abs=1e-9), (
+        "a tract with no doubt left is still contributing to the verification "
+        "queue, which would make it a risk map"
+    )
+    assert open_question > 0.1, (
+        "the same danger, unresolved, must outrank it"
+    )
