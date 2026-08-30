@@ -542,14 +542,32 @@ the whole shell.
 
 ## Security headers
 
-Every response carries `X-Content-Type-Options`, `X-Frame-Options`,
-`Referrer-Policy`, `Permissions-Policy`, a `default-src 'none'` CSP, and
-`Cache-Control: no-store` — this service answers with JSON and nothing else,
-and each response names a neighbourhood at a moment, neither of which is public
-or stays true.
+**From the API server.** Every response carries `X-Content-Type-Options`,
+`X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, a
+`default-src 'none'` CSP, and `Cache-Control: no-store` — this service answers
+with JSON and nothing else, and each response names a neighbourhood at a
+moment, neither of which is public or stays true.
 
 HSTS is emitted **only over TLS**. Sending it over plain HTTP is ignored at
 best, and harmful if the config reaches a host that cannot serve HTTPS.
+
+**From the deployed site.** None of that applies: the published build is static
+files and there is no middleware in front of them. This section used to say
+"every response" without qualification, which was true of the API and false of
+the thing people actually open — the deployed site was sending nothing but
+GitHub's own HSTS.
+
+What a document can carry, it now carries: a `default-src 'none'` CSP and a
+referrer policy are set as `<meta>` in `index.html`, admitting only self
+scripts, Google Fonts for styles and faces, `data:` images for the map canvas,
+and same-origin `connect-src` for the baked JSON. `style-src` allows
+`'unsafe-inline'` because the interface draws bar widths as style attributes;
+`script-src` is given no such licence.
+
+What a document cannot carry is stated rather than implied: `frame-ancestors`
+and `X-Frame-Options` are ignored in `<meta>`, so the deployed site has no
+framing protection. Hosting it anywhere with response-header control would fix
+that; GitHub Pages has none.
 
 ## Heat relief
 

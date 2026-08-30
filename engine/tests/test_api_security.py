@@ -68,3 +68,28 @@ def test_a_handler_may_override_a_default(client):
     )])
     app.add_middleware(SecurityHeadersMiddleware)
     assert TestClient(app).get("/probe").headers["Cache-Control"] == "max-age=60"
+
+
+def test_the_static_build_carries_the_policy_the_server_sets_in_middleware():
+    """The deployed site has no middleware in front of it.
+
+    The header section of the README used to claim "every response" carries a
+    CSP. That was true of the API and false of the published build, which is
+    the one anybody opens: it was sending nothing but the host's own HSTS. A
+    document can carry a policy in `<meta>`, so it does, and this fails if the
+    tag is dropped or loosened.
+    """
+    from pathlib import Path
+
+    index = Path(__file__).resolve().parents[2] / "web" / "index.html"
+    if not index.exists():
+        pytest.skip("web sources not present")
+
+    html = index.read_text()
+    assert 'http-equiv="Content-Security-Policy"' in html
+    assert "default-src 'none'" in html
+    assert "script-src 'self'" in html, "scripts must not be given a wildcard"
+    assert "'unsafe-eval'" not in html
+    # The one concession, and only for styles: bar widths are style attributes.
+    assert "'unsafe-inline'" in html.split("style-src")[1].split(";")[0]
+    assert "'unsafe-inline'" not in html.split("script-src")[1].split(";")[0]

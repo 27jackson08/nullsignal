@@ -5,6 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NullSignal</title>
     <meta name="description" content="Evidence-sufficiency mapping for public safety decisions." />
+
+    <!--
+      The API sets its headers in middleware. A static build has no server to
+      set them, and the deployed site is the one people actually open, so the
+      policy is carried in the document instead. `frame-ancestors` and
+      `X-Frame-Options` cannot be set this way and are noted as such in the
+      README rather than quietly claimed.
+
+      `style-src` admits 'unsafe-inline' because the interface draws bars and
+      coverage widths as inline style attributes; scripts do not get the same
+      licence.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none';
+               script-src 'self';
+               style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+               font-src https://fonts.gstatic.com;
+               img-src 'self' data:;
+               connect-src 'self';
+               base-uri 'none';
+               form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
