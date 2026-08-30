@@ -10,10 +10,17 @@ export function useScenario() {
   const [tick, setTick] = useState(0);
   const [isPlaying, setPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Retrying a scenario means re-running the effect for a name it already
+  // holds, and setState with an unchanged value is a no-op, so the fetch would
+  // never fire again. A counter gives the effect something that did change.
+  const [attempt, setAttempt] = useState(0);
   const timer = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!name) { setPlayback(null); setTick(0); return; }
+    // Clearing the error here as well as on load: leaving a scenario after a
+    // failure used to return to live data with the failure notice still
+    // standing over the map.
+    if (!name) { setPlayback(null); setTick(0); setError(null); return; }
     let cancelled = false;
     setError(null);
     setPlayback(null);
@@ -23,7 +30,7 @@ export function useScenario() {
       .catch((err: Error) => { if (!cancelled) setError(err.message); });
 
     return () => { cancelled = true; };
-  }, [name]);
+  }, [name, attempt]);
 
   // Playback stops at the end rather than looping: the last frame is the
   // reveal, and looping past it undercuts the point being made.
@@ -57,6 +64,7 @@ export function useScenario() {
 
   return {
     name, playback, view, tick, isPlaying, error,
+    retry: () => setAttempt((n) => n + 1),
     load: setName, seek, exit,
     togglePlay: () => setPlaying((on) => !on),
   };

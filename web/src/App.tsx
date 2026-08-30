@@ -90,6 +90,24 @@ export default function App() {
           {isLoading && !error && (
             <div className="boot-message"><p className="label">Loading tracts…</p></div>
           )}
+          {/* A scenario that fails to load used to do nothing at all: no
+              timeline, no notice, and a picker still naming the scenario as
+              though it were running. Silence standing in for a failure, in the
+              one project that has no excuse for it. */}
+          {scenario.error && !scenario.playback && (
+            <div className="boot-message boot-error" role="alert">
+              <p className="label">That scenario did not load</p>
+              <p>{scenario.error}</p>
+              <div className="boot-actions">
+                <button type="button" onClick={() => scenario.retry()}>
+                  Try again
+                </button>
+                <button type="button" onClick={() => scenario.exit()}>
+                  Back to live data
+                </button>
+              </div>
+            </div>
+          )}
           {mode === "result" && scenario.playback && (
             <Scoreboard playback={scenario.playback} />
           )}

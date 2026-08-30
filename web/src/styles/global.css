@@ -71,6 +71,22 @@ body {
 
 .map-region { position: relative; min-height: 0; }
 
+.boot-actions { display: flex; gap: var(--space-3); margin-top: var(--space-4); }
+
+.boot-actions button {
+  padding: .45rem .85rem;
+  font-family: var(--font-display);
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--ink);
+  cursor: pointer;
+}
+.boot-actions button:first-child { background: var(--ink); color: var(--surface); }
+.boot-actions button:hover { border-color: var(--alarm); color: var(--alarm); }
+.boot-actions button:first-child:hover { background: var(--alarm); color: var(--surface); }
+
 .boot-message {
   position: absolute;
   inset: 0;

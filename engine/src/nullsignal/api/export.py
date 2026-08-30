@@ -22,10 +22,16 @@ from ..sim import scenario as scenario_module
 
 def export(out_dir: Path, scenarios_dir: Path, *, scenario_names: list[str] | None = None) -> dict[str, int]:
     """Write the whole API surface under `out_dir`."""
-    if out_dir.exists():
+    # A full export owns the directory and clears it, so a renamed tract or a
+    # deleted scenario cannot linger as a stale file. A partial one must not:
+    # `--scenario one-thing` wiping the other eleven leaves a build that serves
+    # 404s for scenarios whose YAML is sitting right there, which is a silent
+    # trap and has caught the author twice.
+    partial = scenario_names is not None
+    if out_dir.exists() and not partial:
         shutil.rmtree(out_dir)
-    (out_dir / "zones").mkdir(parents=True)
-    (out_dir / "scenarios").mkdir(parents=True)
+    (out_dir / "zones").mkdir(parents=True, exist_ok=True)
+    (out_dir / "scenarios").mkdir(parents=True, exist_ok=True)
 
     print("  assessing the city ...", flush=True)
     api_app._rebuild()
@@ -70,6 +76,14 @@ def export(out_dir: Path, scenarios_dir: Path, *, scenario_names: list[str] | No
         observed_at=snapshot_taken_at(api_app.RAW_DIR, api_app.DB_PATH),
     )
     normal = _summer_normal(api_app.DB_PATH)
+
+    if partial:
+        kept = sorted(
+            path.stem for path in (out_dir / "scenarios").glob("*.json")
+            if path.stem not in wanted
+        )
+        if kept:
+            print(f"  keeping {len(kept)} scenario(s) already exported", flush=True)
 
     for name in wanted:
         print(f"  running {name} ...", flush=True)

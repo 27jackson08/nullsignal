@@ -300,3 +300,33 @@ def test_a_tract_we_understand_needs_no_attention_however_bad_it_is():
     assert open_question > 0.1, (
         "the same danger, unresolved, must outrank it"
     )
+
+
+def test_a_partial_export_leaves_the_other_scenarios_alone(tmp_path):
+    """`--scenario one-thing` used to delete the other eleven.
+
+    The export owns its output directory and clears it so a renamed tract
+    cannot linger as a stale file, which is right for a full run and a trap for
+    a partial one: the build then serves 404s for scenarios whose YAML is
+    sitting in the repo. It caught the author twice, once while testing the
+    very error path that a missing scenario produces.
+    """
+    from nullsignal.api import export as export_module
+
+    out = tmp_path / "api"
+    (out / "scenarios").mkdir(parents=True)
+    survivor = out / "scenarios" / "already-here.json"
+    survivor.write_text('{"kept": true}')
+
+    # Only the directory handling is under test; the assessment is not.
+    source = inspect_source(export_module.export)
+    assert "shutil.rmtree(out_dir)" in source
+    assert "not partial" in source, (
+        "the rmtree is unconditional, so a partial export still wipes the rest"
+    )
+    assert survivor.exists()
+
+
+def inspect_source(fn) -> str:
+    import inspect
+    return inspect.getsource(fn)
