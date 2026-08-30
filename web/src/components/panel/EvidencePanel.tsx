@@ -140,9 +140,53 @@ export function EvidencePanel({ geoid, onSelect }: EvidencePanelProps) {
         </div>
       )}
 
+      {/* Shown first where it exists: for a tract nobody can call, what would
+          let them call it is the operator's question, and the highest-value
+          check is frequently a different action. Both are named rather than
+          one standing in for the other. */}
+      {detail.resolving_check && (
+        <div className="next-check is-resolving">
+          {detail.resolving_check.label ? (
+            <>
+              <p className="label">What would settle this</p>
+              <p className="check-label">{detail.resolving_check.label}</p>
+              <p className="check-detail">{detail.resolving_check.detail}</p>
+              <dl className="check-meta">
+                <div>
+                  <dt>Time</dt>
+                  <dd className="numeric">
+                    {detail.resolving_check.latency_minutes} min
+                  </dd>
+                </div>
+                {detail.resolving_check.resolves_to && (
+                  <div>
+                    <dt>Sufficiency</dt>
+                    <dd className="numeric">
+                      {detail.sufficiency.score.toFixed(2)} &rarr;{" "}
+                      {detail.resolving_check.resolves_to.sufficiency.toFixed(2)}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            </>
+          ) : (
+            <>
+              <p className="label">Nothing would settle this</p>
+              <p className="check-detail">
+                {detail.resolving_check.nothing_resolves}.
+              </p>
+            </>
+          )}
+        </div>
+      )}
+
       {nextCheck && (
         <div className="next-check">
-          <p className="label">Highest-value next check</p>
+          <p className="label">
+            {detail.resolving_check
+              ? "Would most change the response"
+              : "Highest-value next check"}
+          </p>
           <p className="check-label">{nextCheck.label}</p>
           <p className="check-detail">{nextCheck.detail}</p>
           <dl className="check-meta">

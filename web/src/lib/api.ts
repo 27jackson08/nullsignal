@@ -84,6 +84,14 @@ export interface ZoneDetail {
     key: string; label: string; value: number; value_per_cost: number;
     cost: number; latency_minutes: number; detail: string;
   }[];
+  /** Set only where the tract could not be called: the check that would
+   *  settle it, or the reason nothing would. */
+  resolving_check: {
+    key?: string; label: string | null; latency_minutes?: number;
+    detail?: string;
+    resolves_to?: { state: string; sufficiency: number };
+    nothing_resolves: string | null;
+  } | null;
   heat_relief: {
     reachable: number | null;
     listed: number | null;

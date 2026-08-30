@@ -203,3 +203,8 @@
 /* Relief the record claims and the city does not have. Coloured, because it is
    a discrepancy rather than a measurement. */
 .facts dd.overstated { color: var(--state-suspected); }
+
+/* The check that would settle the call leads, and is marked apart from the one
+   that would only change the response. */
+.next-check.is-resolving { border-left: 3px solid var(--state-low-ink); }
+.next-check.is-resolving .check-label { color: var(--state-low-ink); }

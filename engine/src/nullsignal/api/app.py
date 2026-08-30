@@ -174,6 +174,31 @@ def _resolving_check(item, ours: ZoneAssessment):
     return cheapest_resolving(item, assess=engine.assess)
 
 
+def _resolving_summary(item, ours: ZoneAssessment) -> dict | None:
+    """What would settle this tract, for the panel.
+
+    `None` where the tract has already been called, and where nothing in the
+    catalogue would settle it the reason is carried instead of a check -- the
+    same distinction the queue and the briefing make.
+    """
+    if ours.state is not DecisionState.UNKNOWN:
+        return None
+
+    resolving = _resolving_check(item, ours)
+    if resolving is None:
+        from ..findings.briefing import _why_stuck
+        return {"label": None, "nothing_resolves": _why_stuck(item)}
+
+    return {
+        "key": resolving.action.key,
+        "label": resolving.action.label,
+        "latency_minutes": resolving.action.latency_minutes,
+        "detail": resolving.action.detail,
+        "resolves_to": {"state": resolving.state, "sufficiency": resolving.sufficiency},
+        "nothing_resolves": None,
+    }
+
+
 def _queue_row(item, ours: ZoneAssessment) -> dict:
     # For a tract nobody can call, the highest-value check and the check that
     # would settle it are different actions -- see voi/resolution. The queue
@@ -303,6 +328,11 @@ def _detail(item, ours: ZoneAssessment, theirs: ZoneAssessment) -> dict:
              "latency_minutes": c.latency_minutes, "detail": c.detail}
             for c in ours.recommended_checks[:3]
         ],
+        # The check that would settle the call, where that is a different
+        # action from the one above. A reader arriving from the queue was
+        # shown a three-minute errand there and a twenty-minute one here, both
+        # correctly labelled and neither explaining the other.
+        "resolving_check": _resolving_summary(item, ours),
         "sufficiency": {
             "score": round(suff.score, 4),
             "measured": {k: round(v, 4) for k, v in suff.measured_terms.items()},
