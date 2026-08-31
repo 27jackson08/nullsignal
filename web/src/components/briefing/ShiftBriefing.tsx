@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { fetchBriefing, fetchCoolingFinding } from "../../lib/api";
 import type { Assignment, Briefing, CoolingFinding } from "../../lib/api";
 import { useCompletedChecks, type Outcome } from "../../hooks/useCompletedChecks";
+import { Provenance } from "./Provenance";
 import "../../styles/municipal.css";
 import "./shift-briefing.css";
 
@@ -191,6 +192,10 @@ export function ShiftBriefing({ onOpenAudit }: { onOpenAudit: () => void }) {
             empty parkland and a cemetery at the top &mdash; a tract with nobody
             in it can be exactly as unresolved as a dense one, and the
             arithmetic could not tell them apart.
+          </dd>
+          <dt>What this was computed from</dt>
+          <dd>
+            <Provenance />
           </dd>
           <dt>What this list is not</dt>
           <dd>

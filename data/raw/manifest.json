@@ -20,6 +20,15 @@
       "note": "118 district-indicator values, periods 2024"
     },
     {
+      "source_id": "cdc_svi",
+      "fetched_at": null,
+      "status_code": null,
+      "content_hash": "b3b46f71f7c2352f",
+      "byte_count": 3922739,
+      "path": "cdc_svi_ny.csv",
+      "note": "provenance reconstructed from the committed file; the original fetch time was lost when a partial snapshot overwrote the manifest"
+    },
+    {
       "source_id": "climatology",
       "fetched_at": "2026-08-25T23:19:11.915040+00:00",
       "status_code": 200,
@@ -47,6 +56,15 @@
       "note": "71 districts, 286 heat dispatches of 100000 health dispatches over 120d"
     },
     {
+      "source_id": "gtfs_rt_summary",
+      "fetched_at": null,
+      "status_code": null,
+      "content_hash": "10a22ad7253ea92c",
+      "byte_count": 1413,
+      "path": "gtfs_rt_summary.json",
+      "note": "provenance reconstructed from the committed file; the original fetch time was lost when a partial snapshot overwrote the manifest"
+    },
+    {
       "source_id": "gtfs_static",
       "fetched_at": "2026-08-24T12:39:56.883144+00:00",
       "status_code": 200,
@@ -65,6 +83,15 @@
       "note": "496 parent stations"
     },
     {
+      "source_id": "nws",
+      "fetched_at": null,
+      "status_code": null,
+      "content_hash": "4ac660b432279e49",
+      "byte_count": 34085,
+      "path": "nws_forecast.json",
+      "note": "provenance reconstructed from the committed file; the original fetch time was lost when a partial snapshot overwrote the manifest"
+    },
+    {
       "source_id": "nws_alerts",
       "fetched_at": "2026-08-26T03:53:40.839643+00:00",
       "status_code": 200,
@@ -72,6 +99,15 @@
       "byte_count": 2,
       "path": "nws_alerts.json",
       "note": "0 active alerts in NY, 0 heat-related"
+    },
+    {
+      "source_id": "nyc_tracts",
+      "fetched_at": null,
+      "status_code": null,
+      "content_hash": "f64554b0d03f1c4c",
+      "byte_count": 7691890,
+      "path": "nyc_tracts.json",
+      "note": "provenance reconstructed from the committed file; the original fetch time was lost when a partial snapshot overwrote the manifest"
     }
   ],
   "failures": []

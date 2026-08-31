@@ -551,6 +551,22 @@ moment, neither of which is public or stays true.
 HSTS is emitted **only over TLS**. Sending it over plain HTTP is ignored at
 best, and harmful if the config reaches a host that cannot serve HTTPS.
 
+### Provenance
+
+The briefing carries the snapshot manifest: every source the store reads, when
+it was fetched, its SHA-256 prefix and its size. The suite recomputes each hash
+against the committed file, and parses `store.py` to fail if a loader is added
+without a record of where its data came from.
+
+Four entries carry no fetch time. A partial snapshot used to overwrite the
+manifest rather than merging into it — that was fixed, but the entries already
+lost never came back, so the census geometry, the vulnerability index, the
+weather forecast and the transit feed health were read by the store and
+declared nowhere. Two of those are the critical sources and one underpins every
+equity claim here. The hashes are reconstructed from the committed files; the
+timestamps are not recoverable and are **not invented**, and a test forbids
+filling them in.
+
 **From the deployed site.** None of that applies: the published build is static
 files and there is no middleware in front of them. This section used to say
 "every response" without qualification, which was true of the API and false of

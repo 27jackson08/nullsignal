@@ -145,7 +145,13 @@ export interface Summary {
   snapshot: {
     available: boolean;
     snapshot_at?: string;
-    sources?: { source_id: string; fetched_at: string; content_hash: string; bytes: number }[];
+    sources?: {
+      source_id: string;
+      /** Null where the entry was reconstructed and the fetch time was lost. */
+      fetched_at: string | null;
+      content_hash: string;
+      bytes: number;
+    }[];
     failures?: { source: string; error: string }[];
   };
 }
